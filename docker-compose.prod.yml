@@ -1,0 +1,42 @@
+services:
+  plantes-web:
+    image: ragiroux/technorag:plantes-latest
+    container_name: plantes-web
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@hs-postgres:5432/plantes_planner
+      AUTH_SECRET: ${AUTH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      AZURE_AD_CLIENT_ID: ${AZURE_AD_CLIENT_ID}
+      AZURE_AD_CLIENT_SECRET: ${AZURE_AD_CLIENT_SECRET}
+      AZURE_AD_TENANT_ID: ${AZURE_AD_TENANT_ID}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      CRON_SECRET: ${CRON_SECRET}
+      OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY}
+      NODE_ENV: production
+    ports:
+      - "3003:3000"
+    depends_on:
+      - hs-postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    mem_limit: 512m
+    restart: unless-stopped
+
+  plantes-watchtower:
+    image: containrrr/watchtower
+    container_name: plantes-watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 60 plantes-web
+    mem_limit: 64m
+    restart: unless-stopped
+
+networks:
+  default:
+    name: docker-compose-nas
+    external: true
