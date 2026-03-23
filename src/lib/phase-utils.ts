@@ -19,6 +19,8 @@ export interface PlantActionRow {
   spacingCm: number | null;
   rowSpacingCm: number | null;
   calendar: PlantCalendar | null;
+  repiquageAt: string | null;
+  transplantAt: string | null;
 }
 
 export const phaseConfig: Record<Phase, { emoji: string; label: string }> = {

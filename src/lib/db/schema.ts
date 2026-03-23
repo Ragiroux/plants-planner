@@ -178,10 +178,11 @@ export const user_plants = pgTable(
       .references(() => plants.id, { onDelete: "cascade" }),
     quantity: integer("quantity").default(1).notNull(),
     planted_date: date("planted_date"),
+    repiquage_at: date("repiquage_at"),
+    transplant_at: date("transplant_at"),
     notes: text("notes"),
     created_at: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [unique().on(table.user_id, table.plant_id, table.garden_id)]
+  }
 );
 
 export const plant_steps = pgTable("plant_steps", {

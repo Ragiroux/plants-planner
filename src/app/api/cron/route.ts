@@ -57,6 +57,8 @@ function plantWithCalendarToActionRow(plant: PlantWithCalendar): PlantActionRow 
     frostTolerance: plant.frost_tolerance,
     spacingCm: plant.spacing_cm,
     rowSpacingCm: plant.row_spacing_cm,
+    repiquageAt: null,
+    transplantAt: null,
     calendar: {
       indoor_sow_start: plant.indoor_sow_start,
       indoor_sow_end: plant.indoor_sow_end,

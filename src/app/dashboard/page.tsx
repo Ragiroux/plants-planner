@@ -174,6 +174,8 @@ export default async function DashboardPage() {
       spacingCm: row.plant.spacing_cm ?? null,
       rowSpacingCm: row.plant.row_spacing_cm ?? null,
       calendar: cal,
+      repiquageAt: row.userPlant.repiquage_at ?? null,
+      transplantAt: row.userPlant.transplant_at ?? null,
     };
   });
 
@@ -264,13 +266,14 @@ export default async function DashboardPage() {
   const trackingPlants = actionRows.map((row) => {
     const plantedDate = row.plantedDate;
     const cal = row.calendar;
+    const userPlantRow = userPlantRows.find((r) => r.userPlant.id === row.id);
+    const quantity = userPlantRow?.userPlant.quantity ?? 1;
 
     if (plantedDate) {
+      const DAY = 24 * 60 * 60 * 1000;
       const todayMs = new Date(todayStr + "T00:00:00").getTime();
       const plantedMs = new Date(plantedDate + "T00:00:00").getTime();
-      const daysSincePlanted = Math.floor(
-        (todayMs - plantedMs) / (24 * 60 * 60 * 1000)
-      );
+      const daysSincePlanted = Math.floor((todayMs - plantedMs) / DAY);
 
       const d1 = row.daysIndoorToRepiquage;
       const d2 = row.daysRepiquageToTransplant;
@@ -283,47 +286,57 @@ export default async function DashboardPage() {
         endDay: number;
       };
 
+      const toDay = (ms: number) => Math.floor((ms - plantedMs) / DAY);
+
       const segments: PhaseSegment[] = [];
-      let cursor = 0;
+      let cursorMs = plantedMs;
 
       if (d1 !== null) {
+        const endMs = row.repiquageAt
+          ? new Date(row.repiquageAt + "T00:00:00").getTime()
+          : cursorMs + d1 * DAY;
         segments.push({
           label: "Semis intérieur",
           color: "#E8912D",
-          startDay: cursor,
-          endDay: cursor + d1,
+          startDay: toDay(cursorMs),
+          endDay: toDay(endMs),
         });
-        cursor += d1;
+        cursorMs = endMs;
       }
       if (d2 !== null) {
+        const endMs = row.transplantAt
+          ? new Date(row.transplantAt + "T00:00:00").getTime()
+          : cursorMs + d2 * DAY;
         segments.push({
           label: "Repiquage",
           color: "#D45FA0",
-          startDay: cursor,
-          endDay: cursor + d2,
+          startDay: toDay(cursorMs),
+          endDay: toDay(endMs),
         });
-        cursor += d2;
+        cursorMs = endMs;
       }
       if (d3 !== null) {
         segments.push({
           label: "Au potager",
           color: "#4A9E4A",
-          startDay: cursor,
-          endDay: cursor + d3,
+          startDay: toDay(cursorMs),
+          endDay: toDay(cursorMs + d3 * DAY),
         });
-        cursor += d3;
+        cursorMs = cursorMs + d3 * DAY;
       }
 
-      const totalDays = cursor || null;
+      const totalDays = toDay(cursorMs) || null;
 
       let currentSegment: PhaseSegment | null = null;
       let currentSegmentProgress = 0;
       let currentSegmentTotal = 0;
 
-      for (const seg of segments) {
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i];
+        const isLast = i === segments.length - 1;
         if (
           daysSincePlanted >= seg.startDay &&
-          daysSincePlanted <= seg.endDay
+          (isLast ? daysSincePlanted <= seg.endDay : daysSincePlanted < seg.endDay)
         ) {
           currentSegment = seg;
           currentSegmentProgress = daysSincePlanted - seg.startDay;
@@ -340,6 +353,21 @@ export default async function DashboardPage() {
         totalDays !== null && daysSincePlanted >= totalDays;
       const isOverdue =
         currentSegment !== null && daysSincePlanted > currentSegment.endDay;
+
+      // Determine next phase action
+      let nextPhaseAction: "repiquage" | "transplant" | null = null;
+      if (!isComplete && currentSegment) {
+        if (currentSegment.label === "Semis intérieur" && !row.repiquageAt) {
+          nextPhaseAction = "repiquage";
+        } else if (currentSegment.label === "Repiquage" && !row.transplantAt) {
+          nextPhaseAction = "transplant";
+        }
+      }
+
+      const gardenActions =
+        !isComplete && currentSegment?.label === "Au potager"
+          ? (["arrosage", "fertilisation", "entretien"] as const)
+          : null;
 
       return {
         id: row.id,
@@ -363,6 +391,9 @@ export default async function DashboardPage() {
         daysIndoorToRepiquage: row.daysIndoorToRepiquage,
         daysRepiquageToTransplant: row.daysRepiquageToTransplant,
         daysTransplantToHarvest: row.daysTransplantToHarvest,
+        quantity,
+        nextPhaseAction,
+        gardenActions,
       };
     }
 
@@ -388,6 +419,9 @@ export default async function DashboardPage() {
       daysIndoorToRepiquage: row.daysIndoorToRepiquage,
       daysRepiquageToTransplant: row.daysRepiquageToTransplant,
       daysTransplantToHarvest: row.daysTransplantToHarvest,
+      quantity,
+      nextPhaseAction: null,
+      gardenActions: null,
     };
   });
 
@@ -441,29 +475,43 @@ export default async function DashboardPage() {
     };
   }>> = {};
   for (const [phase, rows] of thisWeekByPhase.entries()) {
-    thisWeekByPhaseSerialized[phase] = rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      plantedDate: row.plantedDate,
-      daysIndoorToRepiquage: row.daysIndoorToRepiquage,
-      frostTolerance: row.frostTolerance,
-      spacingCm: row.spacingCm,
-      rowSpacingCm: row.rowSpacingCm,
-      calData: {
-        germinationTempMin: row.calendar?.germination_temp_min ?? null,
-        germinationTempMax: row.calendar?.germination_temp_max ?? null,
-        depthMm: row.calendar?.depth_mm ?? null,
-        sowingMethod: row.calendar?.sowing_method ?? null,
-        heightCm: row.calendar?.height_cm ?? null,
-        daysToMaturityMin: row.calendar?.days_to_maturity_min ?? null,
-        daysToMaturityMax: row.calendar?.days_to_maturity_max ?? null,
-      },
-    }));
+    const seen = new Set<number>();
+    thisWeekByPhaseSerialized[phase] = rows
+      .filter((row) => {
+        if (seen.has(row.plantId)) return false;
+        seen.add(row.plantId);
+        return true;
+      })
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        plantedDate: row.plantedDate,
+        daysIndoorToRepiquage: row.daysIndoorToRepiquage,
+        frostTolerance: row.frostTolerance,
+        spacingCm: row.spacingCm,
+        rowSpacingCm: row.rowSpacingCm,
+        calData: {
+          germinationTempMin: row.calendar?.germination_temp_min ?? null,
+          germinationTempMax: row.calendar?.germination_temp_max ?? null,
+          depthMm: row.calendar?.depth_mm ?? null,
+          sowingMethod: row.calendar?.sowing_method ?? null,
+          heightCm: row.calendar?.height_cm ?? null,
+          daysToMaturityMin: row.calendar?.days_to_maturity_min ?? null,
+          daysToMaturityMax: row.calendar?.days_to_maturity_max ?? null,
+        },
+      }));
   }
 
   const nextWeekByPhaseSerialized: Record<string, Array<{ id: number; name: string }>> = {};
   for (const [phase, rows] of nextWeekByPhase.entries()) {
-    nextWeekByPhaseSerialized[phase] = rows.map((row) => ({ id: row.id, name: row.name }));
+    const seen = new Set<number>();
+    nextWeekByPhaseSerialized[phase] = rows
+      .filter((row) => {
+        if (seen.has(row.plantId)) return false;
+        seen.add(row.plantId);
+        return true;
+      })
+      .map((row) => ({ id: row.id, name: row.name }));
   }
 
   return (

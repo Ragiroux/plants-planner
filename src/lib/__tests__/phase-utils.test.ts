@@ -24,6 +24,8 @@ function makeRow(
     spacingCm: null,
     rowSpacingCm: null,
     calendar,
+    repiquageAt: null,
+    transplantAt: null,
     ...overrides,
   };
 }

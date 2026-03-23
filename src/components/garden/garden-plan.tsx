@@ -10,6 +10,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import type { gardens, user_plants, plants, companion_plants } from "@/lib/db/schema";
+import { getPlantEmoji } from "@/lib/plant-utils";
 
 type Garden = typeof gardens.$inferSelect;
 type UserPlant = typeof user_plants.$inferSelect;
@@ -52,25 +53,6 @@ function hashPlantName(name: string): string {
   return `hsl(${h * 10}, ${s}%, ${l}%)`;
 }
 
-function getPlantEmoji(name: string): string {
-  const n = name.toLowerCase();
-  if (n.includes("tomate")) return "🍅";
-  if (n.includes("carotte")) return "🥕";
-  if (n.includes("concombre") || n.includes("courgette")) return "🥒";
-  if (n.includes("laitue") || n.includes("mesclun") || n.includes("épinard") || n.includes("epinard")) return "🥬";
-  if (n.includes("poivron") || n.includes("piment")) return "🫑";
-  if (n.includes("aubergine")) return "🍆";
-  if (n.includes("brocoli")) return "🥦";
-  if (n.includes("chou")) return "🥬";
-  if (n.includes("haricot")) return "🫘";
-  if (n.includes("pois")) return "🫛";
-  if (n.includes("maïs") || n.includes("mais")) return "🌽";
-  if (n.includes("oignon")) return "🧅";
-  if (n.includes("ail")) return "🧄";
-  if (n.includes("citrouille") || n.includes("courge")) return "🎃";
-  if (n.includes("melon")) return "🍈";
-  return "🌱";
-}
 
 function DraggablePlantCard({
   userPlantId,

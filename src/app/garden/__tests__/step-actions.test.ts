@@ -124,6 +124,8 @@ describe("logStep ownership validation", () => {
       plant_id: 1,
       quantity: 1,
       planted_date: null,
+      repiquage_at: null,
+      transplant_at: null,
       notes: null,
       created_at: new Date(),
     });

@@ -2,9 +2,11 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { gardens, user_plants } from "@/lib/db/schema";
+import { gardens, user_plants, plant_steps, plants, observations } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { stepObservationContent } from "@/lib/step-utils";
+import { getCurrentWeek } from "@/lib/calendar-utils";
 
 export async function createGarden(formData: FormData) {
   const session = await auth();
@@ -135,4 +137,104 @@ export async function updatePlantQuantity(
 
   revalidatePath("/garden");
   revalidatePath("/dashboard");
+}
+
+export async function advancePhase(
+  userPlantId: number,
+  targetPhase: "repiquage" | "transplant",
+  quantity?: number
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "Non authentifié" };
+  }
+
+  const userPlant = await db.query.user_plants.findFirst({
+    where: (up, { eq }) => eq(up.id, userPlantId),
+  });
+
+  if (!userPlant || userPlant.user_id !== session.user.id) {
+    return { error: "Plante introuvable ou accès refusé" };
+  }
+
+  if (!userPlant.planted_date) {
+    return { error: "Date de plantation requise" };
+  }
+
+  if (targetPhase === "transplant" && !userPlant.repiquage_at) {
+    return { error: "Le repiquage doit être fait avant la transplantation" };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const stepType = targetPhase === "repiquage" ? "repiquage" : "transplantation";
+  const advanceQty = quantity ?? userPlant.quantity;
+
+  // Fetch plant name for observation
+  const plant = await db.query.plants.findFirst({
+    where: (p, { eq }) => eq(p.id, userPlant.plant_id),
+  });
+
+  if (advanceQty < 1 || advanceQty > userPlant.quantity) {
+    return { error: "Quantité invalide" };
+  }
+
+  if (advanceQty < userPlant.quantity) {
+    // Split: reduce original quantity, create new record with advanced phase
+    await db
+      .update(user_plants)
+      .set({ quantity: userPlant.quantity - advanceQty })
+      .where(eq(user_plants.id, userPlantId));
+
+    const [newRecord] = await db
+      .insert(user_plants)
+      .values({
+        user_id: userPlant.user_id,
+        garden_id: userPlant.garden_id,
+        plant_id: userPlant.plant_id,
+        quantity: advanceQty,
+        planted_date: userPlant.planted_date,
+        repiquage_at: targetPhase === "repiquage" ? today : userPlant.repiquage_at,
+        transplant_at: targetPhase === "transplant" ? today : userPlant.transplant_at,
+        notes: userPlant.notes,
+      })
+      .returning({ id: user_plants.id });
+
+    await db.insert(plant_steps).values({
+      user_plant_id: newRecord.id,
+      step_type: stepType as "repiquage" | "transplantation",
+      completed_at: new Date(),
+    });
+  } else {
+    // Advance all: update in place
+    const update =
+      targetPhase === "repiquage"
+        ? { repiquage_at: today }
+        : { transplant_at: today };
+
+    await db
+      .update(user_plants)
+      .set(update)
+      .where(eq(user_plants.id, userPlantId));
+
+    await db.insert(plant_steps).values({
+      user_plant_id: userPlantId,
+      step_type: stepType as "repiquage" | "transplantation",
+      completed_at: new Date(),
+    });
+  }
+
+  // Auto-create journal observation
+  if (plant) {
+    await db.insert(observations).values({
+      user_id: session.user.id,
+      plant_id: userPlant.plant_id,
+      week_number: getCurrentWeek(),
+      year: new Date().getFullYear(),
+      content: stepObservationContent(stepType as "repiquage" | "transplantation", plant.name),
+    });
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/garden");
+  revalidatePath("/journal");
 }

@@ -48,3 +48,21 @@ export function computeNextActionDate(
   next.setDate(next.getDate() + 7);
   return next.toISOString().slice(0, 10);
 }
+
+const stepLabels: Record<StepType, string> = {
+  arrosage: "💧 Arrosage",
+  fertilisation: "🌿 Fertilisation",
+  entretien: "🔧 Entretien",
+  repiquage: "🪴 Repiquage",
+  transplantation: "🏡 Transplantation au potager",
+  semis_interieur: "🌱 Semis intérieur",
+  semis_exterieur: "🌿 Semis extérieur",
+  recolte: "🍅 Récolte",
+};
+
+export function stepObservationContent(
+  stepType: StepType,
+  plantName: string
+): string {
+  return `${stepLabels[stepType]} — ${plantName}`;
+}

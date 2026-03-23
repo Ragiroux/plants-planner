@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { advancePhase } from "@/app/garden/actions";
+import { logStep } from "@/app/garden/[id]/actions";
 import Link from "next/link";
 import { CalendarTimeline } from "@/components/dashboard/calendar-timeline";
 import { CalendarLegend } from "@/components/dashboard/legend";
@@ -43,6 +45,9 @@ interface TrackingPlant {
   daysIndoorToRepiquage: number | null;
   daysRepiquageToTransplant: number | null;
   daysTransplantToHarvest: number | null;
+  quantity: number;
+  nextPhaseAction: "repiquage" | "transplant" | null;
+  gardenActions: readonly string[] | null;
 }
 
 interface MonPotagerPlant {
@@ -186,6 +191,11 @@ export function DashboardClient({
   const [selectedPlant, setSelectedPlant] = useState<MonPotagerPlant | null>(
     null
   );
+  const [isPending, startTransition] = useTransition();
+  const [advancingPlantId, setAdvancingPlantId] = useState<number | null>(null);
+  const [quantityPickerFor, setQuantityPickerFor] = useState<number | null>(null);
+  const [pickerQuantity, setPickerQuantity] = useState(1);
+  const [doneAction, setDoneAction] = useState<string | null>(null);
 
   const hasThisWeekTasks = Object.keys(thisWeekByPhase).length > 0;
 
@@ -325,6 +335,13 @@ export function DashboardClient({
                   countdownText = `En retard de ${Math.abs(daysLeft)} j`;
                 } else {
                   countdownText = `Jour ${plant.currentSegmentProgress + 1} sur ${plant.currentSegmentTotal}`;
+                  const segIdx = plant.segments.findIndex(
+                    (s) => s.label === plant.currentSegment?.label
+                  );
+                  if (segIdx !== -1 && segIdx < plant.segments.length - 1) {
+                    const nextLabel = plant.segments[segIdx + 1].label;
+                    countdownText += ` · ${nextLabel} dans ${daysLeft}j`;
+                  }
                 }
               }
 
@@ -336,6 +353,9 @@ export function DashboardClient({
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-[#2A2622] truncate">
                           {plant.name}
+                          {plant.quantity > 1 && (
+                            <span className="text-[#A9A29A] font-normal"> ×{plant.quantity}</span>
+                          )}
                         </p>
                         <p className="text-xs text-[#7D766E]">{segLabel}</p>
                       </div>
@@ -361,6 +381,116 @@ export function DashboardClient({
                     isOverdue={plant.isOverdue}
                     color={phaseColor}
                   />
+                  {plant.nextPhaseAction && (
+                    <div className="flex items-center gap-2">
+                      {quantityPickerFor === plant.id ? (
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-[#7D766E]">Quantité :</label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={plant.quantity}
+                            value={pickerQuantity}
+                            onChange={(e) => setPickerQuantity(Math.max(1, Math.min(plant.quantity, Number(e.target.value))))}
+                            className="w-14 h-6 text-xs border border-[#E8E4DE] rounded px-1 text-center"
+                          />
+                          <span className="text-xs text-[#A9A29A]">/ {plant.quantity}</span>
+                          <button
+                            disabled={isPending}
+                            onClick={() => {
+                              setAdvancingPlantId(plant.id);
+                              startTransition(async () => {
+                                await advancePhase(plant.id, plant.nextPhaseAction!, pickerQuantity);
+                                setQuantityPickerFor(null);
+                                setAdvancingPlantId(null);
+                              });
+                            }}
+                            className="text-xs font-medium text-white bg-[#2D5A3D] hover:bg-[#3D7A52] rounded px-2 py-0.5 transition-colors disabled:opacity-50"
+                          >
+                            {advancingPlantId === plant.id ? "..." : "OK"}
+                          </button>
+                          <button
+                            onClick={() => setQuantityPickerFor(null)}
+                            className="text-xs text-[#A9A29A] hover:text-[#7D766E]"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          disabled={isPending && advancingPlantId === plant.id}
+                          onClick={() => {
+                            if (plant.quantity > 1) {
+                              setPickerQuantity(plant.quantity);
+                              setQuantityPickerFor(plant.id);
+                            } else {
+                              setAdvancingPlantId(plant.id);
+                              startTransition(async () => {
+                                await advancePhase(plant.id, plant.nextPhaseAction!);
+                                setAdvancingPlantId(null);
+                              });
+                            }
+                          }}
+                          className="text-xs font-medium transition-colors disabled:opacity-50"
+                          style={{
+                            color: plant.segments.find(
+                              (s) =>
+                                s.label ===
+                                (plant.nextPhaseAction === "repiquage"
+                                  ? "Repiquage"
+                                  : "Au potager")
+                            )?.color ?? "#2D5A3D",
+                          }}
+                        >
+                          {advancingPlantId === plant.id
+                            ? "..."
+                            : plant.nextPhaseAction === "repiquage"
+                            ? "Passer au repiquage ›"
+                            : "Passer au potager ›"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {plant.gardenActions && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {plant.gardenActions.map((action) => {
+                        const key = `${plant.id}-${action}`;
+                        const icons: Record<string, string> = {
+                          arrosage: "💧",
+                          fertilisation: "🌿",
+                          entretien: "🔧",
+                        };
+                        const labels: Record<string, string> = {
+                          arrosage: "Arrosage",
+                          fertilisation: "Fertilisation",
+                          entretien: "Entretien",
+                        };
+                        const isDone = doneAction === key;
+                        return (
+                          <button
+                            key={action}
+                            disabled={isPending}
+                            onClick={() => {
+                              startTransition(async () => {
+                                await logStep(
+                                  plant.id,
+                                  action as "arrosage" | "fertilisation" | "entretien"
+                                );
+                                setDoneAction(key);
+                                setTimeout(() => setDoneAction(null), 2000);
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-[#E8E4DE] hover:bg-[#F5F2EE] transition-colors disabled:opacity-50"
+                          >
+                            <span>{isDone ? "✓" : icons[action]}</span>
+                            <span className="text-[#3D3832]">
+                              {isDone ? "Fait!" : labels[action]}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}

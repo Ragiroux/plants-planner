@@ -2,10 +2,11 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { user_plants, plants, plant_steps } from "@/lib/db/schema";
+import { user_plants, plants, plant_steps, observations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { computeNextActionDate, type StepType } from "@/lib/step-utils";
+import { computeNextActionDate, stepObservationContent, type StepType } from "@/lib/step-utils";
+import { getCurrentWeek } from "@/lib/calendar-utils";
 
 export async function logStep(
   userPlantId: number,
@@ -43,7 +44,17 @@ export async function logStep(
     next_action_date,
   });
 
+  await db.insert(observations).values({
+    user_id: session.user.id,
+    plant_id: userPlant.plant_id,
+    week_number: getCurrentWeek(),
+    year: new Date().getFullYear(),
+    content: stepObservationContent(stepType, plant.name),
+  });
+
   revalidatePath(`/garden/${userPlantId}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/journal");
 
   return {};
 }
