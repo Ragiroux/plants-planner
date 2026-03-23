@@ -38,8 +38,6 @@ yarn-error.log*
 .env.production.local
 # allow .env.local.example to be committed
 
-# drizzle migrations
-/drizzle
 
 # vercel
 .vercel
