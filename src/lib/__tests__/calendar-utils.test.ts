@@ -10,66 +10,90 @@ import {
 } from "../calendar-utils";
 
 describe("getCurrentWeek", () => {
-  it("returns a number between 1 and 44", () => {
+  it("returns a number between 1 and 39", () => {
     const week = getCurrentWeek();
     expect(week).toBeGreaterThanOrEqual(1);
-    expect(week).toBeLessThanOrEqual(44);
+    expect(week).toBeLessThanOrEqual(39);
   });
 });
 
 describe("weekToDate", () => {
-  it("week 1 maps to approximately February 1", () => {
-    const date = weekToDate(1, 2025);
+  it("week 1 maps to February 1", () => {
+    const date = weekToDate(1, 2026);
     expect(date.getMonth()).toBe(1);
-    expect(date.getDate()).toBeGreaterThanOrEqual(1);
-    expect(date.getDate()).toBeLessThanOrEqual(7);
+    expect(date.getDate()).toBe(1);
   });
 
-  it("week 5 maps to approximately March 1", () => {
-    const date = weekToDate(5, 2025);
+  it("week 4 maps to February 22", () => {
+    const date = weekToDate(4, 2026);
+    expect(date.getMonth()).toBe(1);
+    expect(date.getDate()).toBe(22);
+  });
+
+  it("week 5 maps to March 1", () => {
+    const date = weekToDate(5, 2026);
     expect(date.getMonth()).toBe(2);
+    expect(date.getDate()).toBe(1);
   });
 
-  it("week 9 maps to late March", () => {
-    const date = weekToDate(9, 2025);
+  it("week 8 maps to March 22", () => {
+    const date = weekToDate(8, 2026);
     expect(date.getMonth()).toBe(2);
-    expect(date.getDate()).toBeGreaterThanOrEqual(22);
+    expect(date.getDate()).toBe(22);
   });
 
-  it("week 13 maps to late April", () => {
-    const date = weekToDate(13, 2025);
+  it("week 9 maps to April 1", () => {
+    const date = weekToDate(9, 2026);
     expect(date.getMonth()).toBe(3);
-    expect(date.getDate()).toBeGreaterThanOrEqual(20);
+    expect(date.getDate()).toBe(1);
   });
 
-  it("week 18 maps to late May", () => {
-    const date = weekToDate(18, 2025);
+  it("week 13 maps to April 29", () => {
+    const date = weekToDate(13, 2026);
+    expect(date.getMonth()).toBe(3);
+    expect(date.getDate()).toBe(29);
+  });
+
+  it("week 14 maps to May 1", () => {
+    const date = weekToDate(14, 2026);
     expect(date.getMonth()).toBe(4);
-    expect(date.getDate()).toBeGreaterThanOrEqual(24);
+    expect(date.getDate()).toBe(1);
   });
 
-  it("week 22 maps to late June", () => {
-    const date = weekToDate(22, 2025);
+  it("week 19 maps to June 1", () => {
+    const date = weekToDate(19, 2026);
     expect(date.getMonth()).toBe(5);
-    expect(date.getDate()).toBeGreaterThanOrEqual(22);
+    expect(date.getDate()).toBe(1);
   });
 
-  it("week 26 maps to late July", () => {
-    const date = weekToDate(26, 2025);
+  it("week 23 maps to July 1", () => {
+    const date = weekToDate(23, 2026);
     expect(date.getMonth()).toBe(6);
-    expect(date.getDate()).toBeGreaterThanOrEqual(20);
+    expect(date.getDate()).toBe(1);
   });
 
-  it("week 31 maps to late August", () => {
-    const date = weekToDate(31, 2025);
+  it("week 27 maps to August 1", () => {
+    const date = weekToDate(27, 2026);
     expect(date.getMonth()).toBe(7);
-    expect(date.getDate()).toBeGreaterThanOrEqual(24);
+    expect(date.getDate()).toBe(1);
   });
 
-  it("week 35 maps to late September", () => {
-    const date = weekToDate(35, 2025);
+  it("week 32 maps to September 1", () => {
+    const date = weekToDate(32, 2026);
     expect(date.getMonth()).toBe(8);
-    expect(date.getDate()).toBeGreaterThanOrEqual(22);
+    expect(date.getDate()).toBe(1);
+  });
+
+  it("week 36 maps to October 1", () => {
+    const date = weekToDate(36, 2026);
+    expect(date.getMonth()).toBe(9);
+    expect(date.getDate()).toBe(1);
+  });
+
+  it("week 39 maps to October 22", () => {
+    const date = weekToDate(39, 2026);
+    expect(date.getMonth()).toBe(9);
+    expect(date.getDate()).toBe(22);
   });
 
   it("uses current year when year is not provided", () => {
@@ -99,10 +123,6 @@ describe("isOffSeason", () => {
     expect(isOffSeason(40)).toBe(true);
   });
 
-  it("returns true for week 44", () => {
-    expect(isOffSeason(44)).toBe(true);
-  });
-
   it("returns false for mid-season week 20", () => {
     expect(isOffSeason(20)).toBe(false);
   });
@@ -113,54 +133,67 @@ describe("getMonthForWeek", () => {
     expect(getMonthForWeek(1)).toBe("Février");
   });
 
+  it("returns Février for week 4", () => {
+    expect(getMonthForWeek(4)).toBe("Février");
+  });
+
   it("returns Mars for week 5", () => {
     expect(getMonthForWeek(5)).toBe("Mars");
   });
 
-  it("returns Mars for week 9", () => {
-    expect(getMonthForWeek(9)).toBe("Mars");
+  it("returns Mars for week 8", () => {
+    expect(getMonthForWeek(8)).toBe("Mars");
+  });
+
+  it("returns Avril for week 9", () => {
+    expect(getMonthForWeek(9)).toBe("Avril");
   });
 
   it("returns Avril for week 13", () => {
     expect(getMonthForWeek(13)).toBe("Avril");
   });
 
-  it("returns Mai for week 18", () => {
-    expect(getMonthForWeek(18)).toBe("Mai");
+  it("returns Mai for week 14", () => {
+    expect(getMonthForWeek(14)).toBe("Mai");
   });
 
-  it("returns Juin for week 22", () => {
-    expect(getMonthForWeek(22)).toBe("Juin");
+  it("returns Juin for week 19", () => {
+    expect(getMonthForWeek(19)).toBe("Juin");
   });
 
-  it("returns Juillet for week 26", () => {
-    expect(getMonthForWeek(26)).toBe("Juillet");
+  it("returns Juillet for week 23", () => {
+    expect(getMonthForWeek(23)).toBe("Juillet");
   });
 
-  it("returns Août for week 31", () => {
-    expect(getMonthForWeek(31)).toBe("Août");
+  it("returns Août for week 27", () => {
+    expect(getMonthForWeek(27)).toBe("Août");
   });
 
-  it("returns Septembre for week 35", () => {
-    expect(getMonthForWeek(35)).toBe("Septembre");
+  it("returns Septembre for week 32", () => {
+    expect(getMonthForWeek(32)).toBe("Septembre");
+  });
+
+  it("returns Octobre for week 36", () => {
+    expect(getMonthForWeek(36)).toBe("Octobre");
   });
 });
 
 describe("getWeekLabel", () => {
-  it("returns month + week of month for week 1", () => {
+  it("returns Février semaine 1 for week 1", () => {
     expect(getWeekLabel(1)).toBe("Février, semaine 1");
   });
 
-  it("returns month + week of month for week 8", () => {
-    // Week 8 = ~March 22 = March week 4
-    const label = getWeekLabel(8);
-    expect(label).toContain("Mars");
-    expect(label).toMatch(/semaine \d/);
+  it("returns Mars semaine 4 for week 8", () => {
+    expect(getWeekLabel(8)).toBe("Mars, semaine 4");
   });
 
-  it("contains the month name", () => {
-    const label = getWeekLabel(13);
-    expect(label).toContain("Avril");
+  it("returns Avril semaine 1 for week 9", () => {
+    expect(getWeekLabel(9)).toBe("Avril, semaine 1");
+  });
+
+  it("returns Avril semaine 2 for week 10", () => {
+    const label = getWeekLabel(10);
+    expect(label).toBe("Avril, semaine 2");
   });
 });
 

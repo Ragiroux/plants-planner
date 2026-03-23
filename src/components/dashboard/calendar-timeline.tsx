@@ -38,7 +38,7 @@ const MONTHS = [
 ];
 
 const DISPLAY_WEEK_MIN = 1;
-const DISPLAY_WEEK_MAX = 44;
+const DISPLAY_WEEK_MAX = 40;
 const DISPLAY_SPAN = DISPLAY_WEEK_MAX - DISPLAY_WEEK_MIN;
 
 function weekToPercent(week: number): number {
