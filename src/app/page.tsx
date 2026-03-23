@@ -55,7 +55,7 @@ export default async function HomePage() {
             },
             {
               title: "Associations de plantes",
-              desc: "Découvrez quelles plantes se complémentent ou se nuisent dans votre jardin.",
+              desc: "Découvrez quelles plantes se complémentent ou se nuisent dans votre potager.",
             },
             {
               title: "Rappels hebdomadaires",

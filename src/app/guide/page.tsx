@@ -116,7 +116,7 @@ export default function GuidePage() {
                 <div className="flex items-start gap-2 bg-[#F0F9F4] border border-[#3D8B5D]/30 rounded-lg p-3">
                   <span className="text-base flex-shrink-0 mt-0.5">✅</span>
                   <p className="text-sm text-[#3D8B5D] font-medium">
-                    Votre assistant jardin est prêt. Bonne culture!
+                    Votre assistant potager est prêt. Bonne culture!
                   </p>
                 </div>
               </div>

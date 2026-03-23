@@ -86,7 +86,7 @@ export function getStatusLabel(
     currentWeek >= calendar.garden_transplant_start &&
     currentWeek <= calendar.garden_transplant_end
   ) {
-    return { label: "Au jardin", bg: "#DCFCE7", color: "#2D5A3D" };
+    return { label: "Au potager", bg: "#DCFCE7", color: "#2D5A3D" };
   }
   if (
     calendar.harvest_start !== null &&

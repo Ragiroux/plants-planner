@@ -2,7 +2,7 @@ const LEGEND_ITEMS = [
   { color: "#E8912D", label: "Semis intérieur" },
   { color: "#D45FA0", label: "Repiquage" },
   { color: "#D4C24A", label: "Semis extérieur" },
-  { color: "#4A9E4A", label: "Au jardin" },
+  { color: "#4A9E4A", label: "Au potager" },
   { color: "#C0392B", label: "Récolte" },
   { color: "#E8A317", label: "Semaine actuelle", dashed: true },
 ];

@@ -5,7 +5,8 @@ import Link from "next/link";
 
 const navLinks = [
   { href: "/dashboard", label: "Tableau de bord" },
-  { href: "/garden", label: "Mon jardin" },
+  { href: "/garden", label: "Mon potager" },
+  { href: "/calendrier", label: "Calendrier" },
   { href: "/journal", label: "Journal" },
   { href: "/report", label: "Rapport" },
   { href: "/shopping", label: "Achats" },

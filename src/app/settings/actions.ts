@@ -174,7 +174,7 @@ export async function updateGardenDimensions(
   });
 
   if (!garden) {
-    return { error: "Jardin introuvable" };
+    return { error: "Potager introuvable" };
   }
 
   await db

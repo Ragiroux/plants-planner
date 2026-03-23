@@ -75,7 +75,7 @@ const CALENDAR_PHASES = [
     key: "garden_transplant",
     startField: "garden_transplant_start",
     endField: "garden_transplant_end",
-    label: "Au jardin",
+    label: "Au potager",
     color: "#4A9E4A",
   },
   {
@@ -180,7 +180,7 @@ export default async function PlantDetailPage({
           href="/garden"
           className="text-sm text-[#7D766E] hover:text-[#2D5A3D] transition-colors"
         >
-          ← Mon jardin
+          ← Mon potager
         </Link>
       </div>
 
@@ -231,7 +231,7 @@ export default async function PlantDetailPage({
             type="submit"
             className="px-4 py-2 text-sm font-medium text-[#C4463A] border border-[#C4463A] rounded-lg hover:bg-[#FEE2E2] transition-colors"
           >
-            Retirer du jardin
+            Retirer du potager
           </button>
         </form>
       </div>

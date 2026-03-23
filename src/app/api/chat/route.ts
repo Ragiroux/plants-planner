@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
       ? recentObs
           .map(
             (o) =>
-              `- ${o.plantName ?? "Jardin"}: "${o.content}"`
+              `- ${o.plantName ?? "Potager"}: "${o.content}"`
           )
           .join("\n")
       : "Aucune observation récente.";
@@ -229,7 +229,7 @@ Contexte du jardinier:
 - Localisation: ${city}
 - Type de sol: ${soil}
 - Semaine actuelle: ${weekLabel}
-- Plantes dans le jardin: ${plantList.length > 0 ? plantList.join(", ") : "Aucune plante ajoutée"}
+- Plantes dans le potager: ${plantList.length > 0 ? plantList.join(", ") : "Aucune plante ajoutée"}
 
 Météo actuelle: ${weatherText || "Non disponible"}
 

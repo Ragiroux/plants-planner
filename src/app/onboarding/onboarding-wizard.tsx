@@ -14,7 +14,7 @@ import { createGarden } from "@/app/garden/actions";
 const STEPS = [
   { label: "Zone" },
   { label: "Localisation" },
-  { label: "Jardin" },
+  { label: "Potager" },
   { label: "Sol" },
 ];
 
@@ -332,13 +332,13 @@ export function OnboardingWizard() {
               className="text-2xl font-bold text-[#2A2622]"
               style={{ fontFamily: "Fraunces, serif" }}
             >
-              Créez votre jardin
+              Créez votre potager
             </h2>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#3D3832] mb-1">
-                  Nom du jardin
+                  Nom du potager
                 </label>
                 <input
                   type="text"

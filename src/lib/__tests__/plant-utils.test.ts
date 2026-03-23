@@ -103,7 +103,7 @@ describe("getStatusLabel", () => {
     expect(result.label).toBe("Semis extérieur");
   });
 
-  it("returns Au jardin when in garden_transplant range", () => {
+  it("returns Au potager when in garden_transplant range", () => {
     const calendar: PlantCalendar = {
       indoor_sow_start: null,
       indoor_sow_end: null,
@@ -125,7 +125,7 @@ describe("getStatusLabel", () => {
       days_to_maturity_max: null,
     };
     const result = getStatusLabel(calendar, 20);
-    expect(result.label).toBe("Au jardin");
+    expect(result.label).toBe("Au potager");
   });
 
   it("returns Récolte when in harvest range", () => {

@@ -20,7 +20,7 @@ export async function createGarden(formData: FormData) {
   const width_m = parseFloat(widthRaw as string);
 
   if (!name || name.trim() === "") {
-    return { error: "Le nom du jardin est requis" };
+    return { error: "Le nom du potager est requis" };
   }
   if (isNaN(length_m) || length_m <= 0) {
     return { error: "La longueur doit être supérieure à 0" };
@@ -61,7 +61,7 @@ export async function addPlant(
   });
 
   if (!garden) {
-    return { error: "Jardin introuvable" };
+    return { error: "Potager introuvable" };
   }
 
   try {
@@ -75,7 +75,7 @@ export async function addPlant(
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     if (message.includes("unique") || message.includes("duplicate")) {
-      return { error: "Cette plante est déjà dans votre jardin" };
+      return { error: "Cette plante est déjà dans votre potager" };
     }
     return { error: "Erreur lors de l'ajout de la plante" };
   }

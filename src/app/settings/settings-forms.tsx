@@ -189,7 +189,7 @@ export function SettingsForms({ user, primaryGarden, unitPreference, aiProvider 
         <Card className="border-[#E8E4DE]">
           <CardHeader className="pb-3">
             <CardTitle className="text-base text-[#2A2622]" style={{ fontFamily: "Fraunces, serif" }}>
-              Dimensions du jardin
+              Dimensions du potager
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -250,7 +250,7 @@ export function SettingsForms({ user, primaryGarden, unitPreference, aiProvider 
         </CardHeader>
         <CardContent>
           <p className="text-sm text-[#7D766E] mb-3">
-            L&apos;assistant jardin utilise l&apos;IA pour répondre à vos questions et générer des bilans de saison.
+            L&apos;assistant potager utilise l&apos;IA pour répondre à vos questions et générer des bilans de saison.
           </p>
           {!aiProvider && (
             <p className="text-sm text-[#3D3832] mb-3">

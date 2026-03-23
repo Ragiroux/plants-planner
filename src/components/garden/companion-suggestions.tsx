@@ -61,7 +61,7 @@ export async function CompanionSuggestions({
       {beneficial.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-[#3D8B5D] uppercase tracking-wide mb-2">
-            Associations bénéfiques avec votre jardin
+            Associations bénéfiques avec votre potager
           </p>
           <div className="flex flex-wrap gap-2">
             {beneficial.map((c, i) => {
@@ -84,7 +84,7 @@ export async function CompanionSuggestions({
       {antagonistic.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-[#C4463A] uppercase tracking-wide mb-2">
-            Associations déconseillées avec votre jardin
+            Associations déconseillées avec votre potager
           </p>
           <div className="flex flex-wrap gap-2">
             {antagonistic.map((c, i) => {

@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
       : "Aucune observation";
 
   const gardenInfo = garden
-    ? `Jardin: ${garden.name}, dimensions: ${garden.length_m ?? "?"}m × ${garden.width_m ?? "?"}m`
-    : "Aucun jardin configuré";
+    ? `Potager: ${garden.name}, dimensions: ${garden.length_m ?? "?"}m × ${garden.width_m ?? "?"}m`
+    : "Aucun potager configuré";
 
   const dataContext = `
 Année: ${year}

@@ -12,7 +12,7 @@ export default function LoginPage() {
             <span className="text-[#C4703F]">Planner</span>
           </h1>
           <p className="mt-3 text-[#5C5650] text-sm font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            Votre assistant pour le jardin potager
+            Votre assistant pour le potager
           </p>
         </div>
 

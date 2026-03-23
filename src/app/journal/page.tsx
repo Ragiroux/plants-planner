@@ -86,7 +86,7 @@ export default async function JournalPage({
             Journal
           </h1>
           <p className="text-sm text-[#7D766E] mt-1">
-            Observations de votre jardin
+            Observations de votre potager
           </p>
         </div>
       </div>

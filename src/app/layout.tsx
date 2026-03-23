@@ -9,12 +9,13 @@ import { HeaderWeatherServer } from "@/components/layout/header-weather-server";
 
 export const metadata: Metadata = {
   title: "PlantesPlanner",
-  description: "Votre assistant pour le jardin potager au Québec",
+  description: "Votre assistant pour le potager au Québec",
 };
 
 const navLinks = [
   { href: "/dashboard", label: "Tableau de bord" },
-  { href: "/garden", label: "Mon jardin" },
+  { href: "/garden", label: "Mon potager" },
+  { href: "/calendrier", label: "Calendrier" },
   { href: "/journal", label: "Journal" },
   { href: "/report", label: "Rapport" },
   { href: "/shopping", label: "Achats" },

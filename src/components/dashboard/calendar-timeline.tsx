@@ -68,7 +68,7 @@ const PHASES = [
     startKey: "garden_transplant_start" as keyof CalendarEntry,
     endKey: "garden_transplant_end" as keyof CalendarEntry,
     color: "#4A9E4A",
-    label: "Au jardin",
+    label: "Au potager",
   },
   {
     startKey: "harvest_start" as keyof CalendarEntry,

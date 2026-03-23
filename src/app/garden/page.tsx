@@ -82,7 +82,7 @@ export default async function GardenPage() {
             className="text-3xl font-bold text-[#2A2622]"
             style={{ fontFamily: "Fraunces, serif" }}
           >
-            Mon jardin
+            Mon potager
           </h1>
           {primaryGarden && (
             <p className="text-sm text-[#7D766E] mt-1">{primaryGarden.name}</p>
@@ -113,12 +113,12 @@ export default async function GardenPage() {
               className="text-xl text-[#2A2622]"
               style={{ fontFamily: "Fraunces, serif" }}
             >
-              Créer votre jardin
+              Créer votre potager
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-[#7D766E] mb-6">
-              Commencez par créer votre jardin pour suivre vos plantes et
+              Commencez par créer votre potager pour suivre vos plantes et
               planifier votre saison.
             </p>
             <form
@@ -139,7 +139,7 @@ export default async function GardenPage() {
                   htmlFor="name"
                   className="block text-sm font-medium text-[#3D3832] mb-1"
                 >
-                  Nom du jardin
+                  Nom du potager
                 </label>
                 <input
                   id="name"
@@ -192,7 +192,7 @@ export default async function GardenPage() {
                 type="submit"
                 className="px-4 py-2 text-sm font-semibold bg-[#2D5A3D] hover:bg-[#3D7A52] text-white rounded-lg transition-colors"
               >
-                Créer le jardin
+                Créer le potager
               </button>
             </form>
           </CardContent>
@@ -207,7 +207,7 @@ export default async function GardenPage() {
               className="text-xl font-bold text-[#2A2622]"
               style={{ fontFamily: "Fraunces, serif" }}
             >
-              Votre jardin est prêt!
+              Votre potager est prêt!
             </h2>
             <p className="text-sm text-[#7D766E]">
               Ajoutez vos premières plantes pour commencer à planifier votre

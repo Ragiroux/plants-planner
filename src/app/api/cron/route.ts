@@ -492,7 +492,7 @@ export async function POST(request: NextRequest) {
 
         const obsContext =
           recentObs.length > 0
-            ? recentObs.map((o) => `"${o.plantName ?? "Jardin"}: ${o.content}"`).join(", ")
+            ? recentObs.map((o) => `"${o.plantName ?? "Potager"}: ${o.content}"`).join(", ")
             : "aucune";
 
         const weatherContext =
@@ -509,7 +509,7 @@ export async function POST(request: NextRequest) {
         const insightResult = await callAI({
           systemPrompt:
             "Tu es un assistant de jardinage expert pour le Québec. Tu réponds en français.",
-          userMessage: `Contexte jardinier: ${insightContext}\n\nEn 2-3 phrases, donne un conseil de jardinage personnalisé et proactif basé sur ce contexte. Sois spécifique aux plantes du jardinier et à la période de l'année.`,
+          userMessage: `Contexte potager: ${insightContext}\n\nEn 2-3 phrases, donne un conseil de jardinage personnalisé et proactif basé sur ce contexte. Sois spécifique aux plantes du jardinier et à la période de l'année.`,
           maxTokens: 4000,
         });
 

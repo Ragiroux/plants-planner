@@ -101,7 +101,7 @@ export default async function GardenAddPage() {
           href="/garden"
           className="text-sm text-[#7D766E] hover:text-[#2D5A3D] transition-colors"
         >
-          ← Mon jardin
+          ← Mon potager
         </Link>
       </div>
 

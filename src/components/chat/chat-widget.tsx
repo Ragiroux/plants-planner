@@ -110,7 +110,7 @@ export function ChatWidget() {
       {/* Floating toggle button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Fermer l'assistant" : "Ouvrir l'assistant jardin"}
+        aria-label={open ? "Fermer l'assistant" : "Ouvrir l'assistant potager"}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#2D5A3D] text-white shadow-lg flex items-center justify-center text-2xl hover:bg-[#3D7A52] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D5A3D] focus-visible:ring-offset-2"
       >
         {open ? (
@@ -138,7 +138,7 @@ export function ChatWidget() {
       {open && (
         <div
           role="dialog"
-          aria-label="Assistant Jardin"
+          aria-label="Assistant Potager"
           className="fixed bottom-[5.5rem] right-6 z-50 w-[calc(100vw-3rem)] sm:w-96 h-[500px] bg-white rounded-2xl shadow-lg border border-[#E8E4DE] flex flex-col overflow-hidden"
         >
           {/* Header */}
@@ -148,7 +148,7 @@ export function ChatWidget() {
                 className="text-base font-semibold text-[#2A2622]"
                 style={{ fontFamily: "Fraunces, serif" }}
               >
-                Assistant Jardin
+                Assistant Potager
               </h2>
               {aiProvider === "gemini" && (
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#E6F4EA] text-[#2D5A3D]">
@@ -190,7 +190,7 @@ export function ChatWidget() {
               <div className="flex flex-col items-center justify-center h-full gap-3 px-4">
                 <span className="text-3xl">🌱</span>
                 <p className="text-sm text-[#3D3832] text-center font-medium">
-                  L&apos;assistant jardin n&apos;est pas encore activé.
+                  L&apos;assistant potager n&apos;est pas encore activé.
                 </p>
                 <p className="text-xs text-[#7D766E] text-center">
                   Configurez-le en 3 minutes!
@@ -205,7 +205,7 @@ export function ChatWidget() {
             ) : messages.length === 0 && !loading ? (
               <div className="flex items-center justify-center h-full">
                 <p className="text-sm text-[#A9A29A] text-center px-4">
-                  Posez une question sur votre jardin et je vous répondrai avec
+                  Posez une question sur votre potager et je vous répondrai avec
                   des conseils personnalisés.
                 </p>
               </div>

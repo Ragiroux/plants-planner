@@ -18,7 +18,7 @@ export async function saveLayout(gardenId: number, layoutJson: string) {
   });
 
   if (!garden) {
-    return { error: "Jardin introuvable ou accès refusé" };
+    return { error: "Potager introuvable ou accès refusé" };
   }
 
   await db

@@ -326,6 +326,57 @@ describe("getPhaseReadiness", () => {
   });
 });
 
+describe("getPhasesStartingNextWeek biology filter", () => {
+  const today = new Date("2026-03-22");
+
+  const calWithTransplantNextWeek: PlantActionRow["calendar"] = {
+    indoor_sow_start: 5,
+    indoor_sow_end: 12,
+    transplant_start: 11,
+    transplant_end: 15,
+    outdoor_sow_start: null,
+    outdoor_sow_end: null,
+    garden_transplant_start: null,
+    garden_transplant_end: null,
+    harvest_start: null,
+    harvest_end: null,
+    depth_mm: null,
+    germination_temp_min: null,
+    germination_temp_max: null,
+    sowing_method: null,
+    luminosity: null,
+    height_cm: null,
+    days_to_maturity_min: null,
+    days_to_maturity_max: null,
+  };
+
+  it("excludes transplant starting next week when biology says not_ready", () => {
+    // Planted 2 days ago, needs 28 days to repiquage => 26 days left => not_ready
+    const row = makeRow(calWithTransplantNextWeek, {
+      plantedDate: "2026-03-20",
+      daysIndoorToRepiquage: 28,
+    });
+    const result = getPhasesStartingNextWeek(row, 11, today);
+    expect(result).not.toContain("transplant");
+  });
+
+  it("includes transplant starting next week when biology says ready", () => {
+    // Planted 28 days ago, needs 28 days to repiquage => 0 days left => ready
+    const row = makeRow(calWithTransplantNextWeek, {
+      plantedDate: "2026-02-22",
+      daysIndoorToRepiquage: 28,
+    });
+    const result = getPhasesStartingNextWeek(row, 11, today);
+    expect(result).toContain("transplant");
+  });
+
+  it("includes transplant starting next week when no plantedDate", () => {
+    const row = makeRow(calWithTransplantNextWeek);
+    const result = getPhasesStartingNextWeek(row, 11, today);
+    expect(result).toContain("transplant");
+  });
+});
+
 describe("getSmartActivePhases biology suppression", () => {
   const today = new Date("2026-03-22");
 

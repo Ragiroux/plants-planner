@@ -11,8 +11,6 @@ import {
 } from "@/lib/db/schema";
 import { eq, inArray, lt, and, isNotNull } from "drizzle-orm";
 import Link from "next/link";
-import { CalendarTimeline } from "@/components/dashboard/calendar-timeline";
-import { CalendarLegend } from "@/components/dashboard/legend";
 import {
   getCurrentWeek,
   getWeekLabel,
@@ -22,15 +20,17 @@ import {
 import { fromMeters, unitSquaredLabel, type UnitPreference } from "@/lib/units";
 import { getPlantEmoji, getStatusLabel } from "@/lib/plant-utils";
 import {
-  getSmartActivePhases,
+  getPhaseReadiness,
   getRepiquageStatus,
-  getPhasesStartingNextWeek,
+  stepTypeLabels,
   phaseConfig,
   phaseOrder,
-  stepTypeLabels,
+  getSmartActivePhases,
+  getPhasesStartingNextWeek,
 } from "@/lib/phase-utils";
 import type { PlantActionRow } from "@/lib/phase-utils";
 import { generateTip, type TipContext } from "@/lib/tip-templates";
+import { DashboardClient } from "./dashboard-client";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -110,13 +110,13 @@ export default async function DashboardPage() {
                 <span className="font-semibold text-[#3D3832]">
                   {weeksUntilSeason} semaine{weeksUntilSeason !== 1 ? "s" : ""}
                 </span>
-                . Profitez-en pour planifier votre jardin!
+                . Profitez-en pour planifier votre potager!
               </p>
               <Link
                 href="/garden"
-                className="inline-flex h-9 items-center px-6 bg-[#2D5A3D] hover:bg-[#3D7A52] text-white font-semibold rounded-lg text-sm transition-colors"
+                className="inline-flex h-11 items-center px-6 bg-[#2D5A3D] hover:bg-[#3D7A52] text-white font-semibold rounded-lg text-sm transition-colors"
               >
-                Gérer mon jardin
+                Gérer mon potager
               </Link>
             </div>
           </div>
@@ -128,15 +128,15 @@ export default async function DashboardPage() {
                 className="text-xl font-bold text-[#2A2622]"
                 style={{ fontFamily: "Fraunces, serif" }}
               >
-                Votre jardin est vide
+                Votre potager est vide
               </h2>
               <p className="text-sm text-[#7D766E]">
-                Ajoutez vos premières plantes pour voir votre calendrier
-                personnalisé.
+                Commencez par ajouter vos premières plantes pour suivre votre
+                saison.
               </p>
               <Link
                 href="/garden"
-                className="inline-flex h-9 items-center px-6 bg-[#2D5A3D] hover:bg-[#3D7A52] text-white font-semibold rounded-lg text-sm transition-colors"
+                className="inline-flex h-11 items-center px-6 bg-[#2D5A3D] hover:bg-[#3D7A52] text-white font-semibold rounded-lg text-sm transition-colors"
               >
                 Ajouter des plantes
               </Link>
@@ -159,26 +159,6 @@ export default async function DashboardPage() {
       )
     );
   const calendarMap = new Map(calendars.map((c) => [c.plant_id, c]));
-
-  const plantRows: Array<{
-    id: number;
-    name: string;
-    quantity: number;
-    plantedDate: string | null;
-    daysIndoorToRepiquage: number | null;
-    daysRepiquageToTransplant: number | null;
-    daysTransplantToHarvest: number | null;
-    calendar: typeof plant_calendars.$inferSelect | null;
-  }> = userPlantRows.map((row) => ({
-    id: row.userPlant.id,
-    name: row.plant.name,
-    quantity: row.userPlant.quantity,
-    plantedDate: row.userPlant.planted_date ?? null,
-    daysIndoorToRepiquage: row.plant.days_indoor_to_repiquage ?? null,
-    daysRepiquageToTransplant: row.plant.days_repiquage_to_transplant ?? null,
-    daysTransplantToHarvest: row.plant.days_transplant_to_harvest ?? null,
-    calendar: calendarMap.get(row.plant.id) ?? null,
-  }));
 
   const actionRows: PlantActionRow[] = userPlantRows.map((row) => {
     const cal = calendarMap.get(row.plant.id) ?? null;
@@ -216,25 +196,26 @@ export default async function DashboardPage() {
       )
     );
 
-  const allObservations = plantIds.length > 0
-    ? await db
-        .select({
-          content: observations.content,
-          year: observations.year,
-          week_number: observations.week_number,
-          plantId: observations.plant_id,
-          plantName: plants.name,
-        })
-        .from(observations)
-        .innerJoin(plants, eq(observations.plant_id, plants.id))
-        .where(
-          and(
-            eq(observations.user_id, session.user.id),
-            inArray(observations.plant_id, plantIds),
-            lt(observations.year, currentYear)
+  const allObservations =
+    plantIds.length > 0
+      ? await db
+          .select({
+            content: observations.content,
+            year: observations.year,
+            week_number: observations.week_number,
+            plantId: observations.plant_id,
+            plantName: plants.name,
+          })
+          .from(observations)
+          .innerJoin(plants, eq(observations.plant_id, plants.id))
+          .where(
+            and(
+              eq(observations.user_id, session.user.id),
+              inArray(observations.plant_id, plantIds),
+              lt(observations.year, currentYear)
+            )
           )
-        )
-    : [];
+      : [];
 
   const pastObservations = allObservations.filter(
     (o) => Math.abs(o.week_number - currentWeek) <= 2
@@ -258,7 +239,6 @@ export default async function DashboardPage() {
     }
   }
 
-  const hasThisWeekTasks = thisWeekByPhase.size > 0;
   const hasNextWeekTasks = nextWeekByPhase.size > 0;
 
   const totalAreaM2 =
@@ -281,316 +261,234 @@ export default async function DashboardPage() {
       ? Math.min(100, Math.round((usedAreaM2 / totalAreaM2) * 100))
       : null;
 
-  const displayPlants = userPlantRows.slice(0, 8);
-  const hasMorePlants = userPlantRows.length > 8;
+  const trackingPlants = actionRows.map((row) => {
+    const plantedDate = row.plantedDate;
+    const cal = row.calendar;
+
+    if (plantedDate) {
+      const todayMs = new Date(todayStr + "T00:00:00").getTime();
+      const plantedMs = new Date(plantedDate + "T00:00:00").getTime();
+      const daysSincePlanted = Math.floor(
+        (todayMs - plantedMs) / (24 * 60 * 60 * 1000)
+      );
+
+      const d1 = row.daysIndoorToRepiquage;
+      const d2 = row.daysRepiquageToTransplant;
+      const d3 = row.daysTransplantToHarvest;
+
+      type PhaseSegment = {
+        label: string;
+        color: string;
+        startDay: number;
+        endDay: number;
+      };
+
+      const segments: PhaseSegment[] = [];
+      let cursor = 0;
+
+      if (d1 !== null) {
+        segments.push({
+          label: "Semis intérieur",
+          color: "#E8912D",
+          startDay: cursor,
+          endDay: cursor + d1,
+        });
+        cursor += d1;
+      }
+      if (d2 !== null) {
+        segments.push({
+          label: "Repiquage",
+          color: "#D45FA0",
+          startDay: cursor,
+          endDay: cursor + d2,
+        });
+        cursor += d2;
+      }
+      if (d3 !== null) {
+        segments.push({
+          label: "Au potager",
+          color: "#4A9E4A",
+          startDay: cursor,
+          endDay: cursor + d3,
+        });
+        cursor += d3;
+      }
+
+      const totalDays = cursor || null;
+
+      let currentSegment: PhaseSegment | null = null;
+      let currentSegmentProgress = 0;
+      let currentSegmentTotal = 0;
+
+      for (const seg of segments) {
+        if (
+          daysSincePlanted >= seg.startDay &&
+          daysSincePlanted <= seg.endDay
+        ) {
+          currentSegment = seg;
+          currentSegmentProgress = daysSincePlanted - seg.startDay;
+          currentSegmentTotal = seg.endDay - seg.startDay;
+          break;
+        }
+      }
+
+      const overallPercent = totalDays
+        ? Math.min(100, Math.round((daysSincePlanted / totalDays) * 100))
+        : null;
+
+      const isComplete =
+        totalDays !== null && daysSincePlanted >= totalDays;
+      const isOverdue =
+        currentSegment !== null && daysSincePlanted > currentSegment.endDay;
+
+      return {
+        id: row.id,
+        plantId: row.plantId,
+        name: row.name,
+        emoji: getPlantEmoji(row.name),
+        plantedDate,
+        hasBiologyData: true as const,
+        daysSincePlanted,
+        currentSegment,
+        currentSegmentProgress,
+        currentSegmentTotal,
+        overallPercent,
+        isComplete,
+        isOverdue,
+        segments,
+        calendar: cal,
+        spacingCm: row.spacingCm,
+        rowSpacingCm: row.rowSpacingCm,
+        frostTolerance: row.frostTolerance,
+        daysIndoorToRepiquage: row.daysIndoorToRepiquage,
+        daysRepiquageToTransplant: row.daysRepiquageToTransplant,
+        daysTransplantToHarvest: row.daysTransplantToHarvest,
+      };
+    }
+
+    return {
+      id: row.id,
+      plantId: row.plantId,
+      name: row.name,
+      emoji: getPlantEmoji(row.name),
+      plantedDate: null,
+      hasBiologyData: false as const,
+      daysSincePlanted: 0,
+      currentSegment: null,
+      currentSegmentProgress: 0,
+      currentSegmentTotal: 0,
+      overallPercent: null,
+      isComplete: false,
+      isOverdue: false,
+      segments: [],
+      calendar: cal,
+      spacingCm: row.spacingCm,
+      rowSpacingCm: row.rowSpacingCm,
+      frostTolerance: row.frostTolerance,
+      daysIndoorToRepiquage: row.daysIndoorToRepiquage,
+      daysRepiquageToTransplant: row.daysRepiquageToTransplant,
+      daysTransplantToHarvest: row.daysTransplantToHarvest,
+    };
+  });
+
+  const calendarTimelinePlants = userPlantRows.map((row) => ({
+    id: row.userPlant.id,
+    name: row.plant.name,
+    quantity: row.userPlant.quantity,
+    plantedDate: row.userPlant.planted_date ?? null,
+    daysIndoorToRepiquage: row.plant.days_indoor_to_repiquage ?? null,
+    daysRepiquageToTransplant: row.plant.days_repiquage_to_transplant ?? null,
+    daysTransplantToHarvest: row.plant.days_transplant_to_harvest ?? null,
+    calendar: calendarMap.get(row.plant.id) ?? null,
+  }));
+
+  const monPotagerPlants = userPlantRows.map(({ userPlant, plant }) => {
+    const cal = calendarMap.get(plant.id) ?? null;
+    const status = getStatusLabel(cal, currentWeek);
+    const emoji = getPlantEmoji(plant.name);
+    return {
+      userPlantId: userPlant.id,
+      plantId: plant.id,
+      name: plant.name,
+      emoji,
+      status,
+      calendar: cal,
+      spacingCm: plant.spacing_cm ?? null,
+      rowSpacingCm: plant.row_spacing_cm ?? null,
+      frostTolerance: plant.frost_tolerance ?? null,
+      daysIndoorToRepiquage: plant.days_indoor_to_repiquage ?? null,
+      daysRepiquageToTransplant: plant.days_repiquage_to_transplant ?? null,
+      daysTransplantToHarvest: plant.days_transplant_to_harvest ?? null,
+    };
+  });
+
+  const thisWeekByPhaseSerialized: Record<string, Array<{
+    id: number;
+    name: string;
+    plantedDate: string | null;
+    daysIndoorToRepiquage: number | null;
+    frostTolerance: string | null;
+    spacingCm: number | null;
+    rowSpacingCm: number | null;
+    calData: {
+      germinationTempMin: number | null;
+      germinationTempMax: number | null;
+      depthMm: number | null;
+      sowingMethod: string | null;
+      heightCm: number | null;
+      daysToMaturityMin: number | null;
+      daysToMaturityMax: number | null;
+    };
+  }>> = {};
+  for (const [phase, rows] of thisWeekByPhase.entries()) {
+    thisWeekByPhaseSerialized[phase] = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      plantedDate: row.plantedDate,
+      daysIndoorToRepiquage: row.daysIndoorToRepiquage,
+      frostTolerance: row.frostTolerance,
+      spacingCm: row.spacingCm,
+      rowSpacingCm: row.rowSpacingCm,
+      calData: {
+        germinationTempMin: row.calendar?.germination_temp_min ?? null,
+        germinationTempMax: row.calendar?.germination_temp_max ?? null,
+        depthMm: row.calendar?.depth_mm ?? null,
+        sowingMethod: row.calendar?.sowing_method ?? null,
+        heightCm: row.calendar?.height_cm ?? null,
+        daysToMaturityMin: row.calendar?.days_to_maturity_min ?? null,
+        daysToMaturityMax: row.calendar?.days_to_maturity_max ?? null,
+      },
+    }));
+  }
+
+  const nextWeekByPhaseSerialized: Record<string, Array<{ id: number; name: string }>> = {};
+  for (const [phase, rows] of nextWeekByPhase.entries()) {
+    nextWeekByPhaseSerialized[phase] = rows.map((row) => ({ id: row.id, name: row.name }));
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1
-            className="text-3xl font-bold text-[#2A2622]"
-            style={{ fontFamily: "Fraunces, serif" }}
-          >
-            Tableau de bord
-          </h1>
-          <p className="text-sm text-[#7D766E] mt-1">
-            {frenchDate} — {weekLabel}
-          </p>
-        </div>
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#2D5A3D]/10 text-[#2D5A3D]">
-          Zone {zone === "zone_3_4" ? "3-4" : "5-6"}
-        </span>
-      </div>
-
-      {/* Overdue tasks alert */}
-      {overdueSteps.length > 0 && (
-        <div className="bg-white rounded-xl border-l-4 border-l-[#C4463A] border-t border-r border-b border-[#E8E4DE] p-4 space-y-3">
-          <h2
-            className="text-base font-bold text-[#C4463A]"
-            style={{ fontFamily: "Fraunces, serif" }}
-          >
-            ⚠️ Actions en retard
-          </h2>
-          <ul className="space-y-2">
-            {overdueSteps.map((step) => (
-              <li key={step.id}>
-                <Link
-                  href={`/garden/${step.userPlantId}`}
-                  className="flex items-start justify-between gap-2 group"
-                >
-                  <span className="text-sm text-[#3D3832]">
-                    <span className="font-semibold text-[#2A2622]">
-                      {step.plantName}
-                    </span>{" "}
-                    — {stepTypeLabels[step.stepType] ?? step.stepType}
-                  </span>
-                  <span className="text-xs text-[#C4463A] whitespace-nowrap">
-                    prévu le {step.nextActionDate}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Two-column zone */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left: Cette semaine */}
-        <div className="space-y-4">
-          {offSeason ? (
-            <div className="bg-white rounded-xl border border-[#E8E4DE] shadow-sm p-8 text-center space-y-3">
-              <span className="text-4xl">❄️</span>
-              <h2
-                className="text-lg font-bold text-[#2A2622]"
-                style={{ fontFamily: "Fraunces, serif" }}
-              >
-                Hors saison
-              </h2>
-              <p className="text-sm text-[#7D766E]">
-                La prochaine saison commence dans{" "}
-                <span className="font-semibold text-[#3D3832]">
-                  {weeksUntilSeason} semaine{weeksUntilSeason !== 1 ? "s" : ""}
-                </span>
-                .
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="bg-white rounded-xl border-l-4 border-l-[#2D5A3D] border-t border-r border-b border-[#E8E4DE] p-4 space-y-4">
-                <h2
-                  className="text-base font-bold text-[#2D5A3D]"
-                  style={{ fontFamily: "Fraunces, serif" }}
-                >
-                  📋 Cette semaine
-                </h2>
-
-                {!hasThisWeekTasks ? (
-                  <p className="text-sm text-[#7D766E]">
-                    Rien de prévu cette semaine! 🎉 Profitez du jardin.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {phaseOrder.map((phase) => {
-                      const rows = thisWeekByPhase.get(phase);
-                      if (!rows || rows.length === 0) return null;
-                      const { emoji, label } = phaseConfig[phase];
-                      return (
-                        <div key={phase}>
-                          <p className="text-sm font-semibold text-[#3D3832] mb-2">
-                            {emoji} {label}
-                          </p>
-                          <ul className="space-y-2 pl-5">
-                            {rows.map((row) => {
-                              const cal = row.calendar;
-                              const repStatus = getRepiquageStatus(
-                                row.plantedDate,
-                                row.daysIndoorToRepiquage
-                              );
-                              const tipCtx: TipContext = {
-                                name: row.name,
-                                plantedDate: row.plantedDate,
-                                daysIndoorToRepiquage: row.daysIndoorToRepiquage,
-                                frostTolerance: row.frostTolerance,
-                                spacingCm: row.spacingCm,
-                                rowSpacingCm: row.rowSpacingCm,
-                                germinationTempMin: cal?.germination_temp_min ?? null,
-                                germinationTempMax: cal?.germination_temp_max ?? null,
-                                depthMm: cal?.depth_mm ?? null,
-                                sowingMethod: cal?.sowing_method ?? null,
-                                heightCm: cal?.height_cm ?? null,
-                                daysToMaturityMin: cal?.days_to_maturity_min ?? null,
-                                daysToMaturityMax: cal?.days_to_maturity_max ?? null,
-                              };
-                              const tip = generateTip(phase, tipCtx, repStatus);
-
-                              return (
-                                <li key={row.id} className="text-sm text-[#5C5650]">
-                                  <Link
-                                    href={`/garden/${row.id}`}
-                                    className="font-semibold text-[#2D5A3D] hover:underline"
-                                  >
-                                    {row.name}
-                                  </Link>
-                                  <span className="block text-xs text-[#7D766E] mt-0.5">
-                                    {tip}
-                                  </span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {hasNextWeekTasks && (
-                <div className="bg-white rounded-xl border-l-4 border-l-[#D4CFC7] border-t border-r border-b border-[#E8E4DE] p-4 space-y-4">
-                  <h2
-                    className="text-base font-bold text-[#7D766E]"
-                    style={{ fontFamily: "Fraunces, serif" }}
-                  >
-                    📅 La semaine prochaine
-                  </h2>
-                  <div className="space-y-4">
-                    {phaseOrder.map((phase) => {
-                      const rows = nextWeekByPhase.get(phase);
-                      if (!rows || rows.length === 0) return null;
-                      const { emoji, label } = phaseConfig[phase];
-                      return (
-                        <div key={phase}>
-                          <p className="text-sm font-medium text-[#5C5650] mb-2">
-                            {emoji} {label}
-                          </p>
-                          <ul className="space-y-1 pl-5">
-                            {rows.map((row) => (
-                              <li
-                                key={row.id}
-                                className="text-sm text-[#A9A29A]"
-                              >
-                                <Link
-                                  href={`/garden/${row.id}`}
-                                  className="text-[#7D766E] hover:text-[#2D5A3D] hover:underline"
-                                >
-                                  {row.name}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Right: Mes plantes */}
-        <div className="bg-white rounded-xl border border-[#E8E4DE] p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2
-              className="text-base font-bold text-[#2A2622]"
-              style={{ fontFamily: "Fraunces, serif" }}
-            >
-              🌿 Mes plantes
-            </h2>
-            {hasMorePlants && (
-              <Link
-                href="/garden"
-                className="text-xs text-[#2D5A3D] hover:underline font-medium"
-              >
-                Voir tout →
-              </Link>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {displayPlants.map(({ userPlant, plant }) => {
-              const cal = calendarMap.get(plant.id) ?? null;
-              const status = getStatusLabel(cal, currentWeek);
-              const emoji = getPlantEmoji(plant.name);
-              return (
-                <Link
-                  key={userPlant.id}
-                  href={`/garden/${userPlant.id}`}
-                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#F5F2EE] transition-colors"
-                >
-                  <span className="text-xl shrink-0">{emoji}</span>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-[#2A2622] truncate">
-                      {plant.name}
-                    </p>
-                    <span
-                      className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium mt-0.5"
-                      style={{
-                        backgroundColor: status.bg,
-                        color: status.color,
-                      }}
-                    >
-                      {status.label}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Space usage bar */}
-      {spacePercent !== null && (
-        <div className="bg-white rounded-xl border border-[#E8E4DE] p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-[#3D3832]">
-              Espace utilisé
-            </span>
-            <span className="text-sm text-[#7D766E]">
-              {fromMeters(usedAreaM2, unitPref).toFixed(1)} {areaUnitLabel} /{" "}
-              {fromMeters(totalAreaM2 ?? 0, unitPref).toFixed(1)} {areaUnitLabel}{" "}
-              ({spacePercent}%)
-            </span>
-          </div>
-          <div className="w-full bg-[#F5F2EE] rounded-full h-2">
-            <div
-              className="h-2 rounded-full transition-all"
-              style={{
-                width: `${spacePercent}%`,
-                backgroundColor:
-                  spacePercent > 90
-                    ? "#C4463A"
-                    : spacePercent > 70
-                    ? "#D4973B"
-                    : "#2D5A3D",
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Calendar timeline */}
-      <div className="bg-white rounded-xl border border-[#E8E4DE] p-4 md:p-6 space-y-4">
-        <CalendarTimeline plants={plantRows} currentWeek={currentWeek} />
-        <div className="pt-2 border-t border-[#F5F2EE]">
-          <CalendarLegend />
-        </div>
-      </div>
-
-      {/* Past observations */}
-      {pastObservations.length > 0 && (
-        <div className="bg-white rounded-xl border-l-4 border-l-[#D4973B] border-t border-r border-b border-[#E8E4DE] p-4 space-y-3">
-          <h2
-            className="text-base font-bold text-[#8B6914]"
-            style={{ fontFamily: "Fraunces, serif" }}
-          >
-            📓 L&apos;an dernier à cette période
-          </h2>
-          <ul className="space-y-3">
-            {pastObservations.map((obs, i) => {
-              const yearsAgo = currentYear - obs.year;
-              const yearLabel =
-                yearsAgo === 1 ? "L'an dernier" : `Il y a ${yearsAgo} ans`;
-              return (
-                <li key={i} className="text-sm text-[#5C5650]">
-                  <span className="font-semibold text-[#3D3832]">
-                    {obs.plantName}
-                  </span>{" "}
-                  <span className="text-[#A9A29A]">
-                    — {yearLabel}, semaine {obs.week_number}
-                  </span>
-                  <p className="mt-0.5 text-[#5C5650] italic">
-                    &ldquo;{obs.content}&rdquo;
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-    </div>
+    <DashboardClient
+      frenchDate={frenchDate}
+      weekLabel={weekLabel}
+      zone={zone}
+      offSeason={offSeason}
+      weeksUntilSeason={weeksUntilSeason}
+      overdueSteps={overdueSteps}
+      trackingPlants={trackingPlants}
+      monPotagerPlants={monPotagerPlants}
+      spacePercent={spacePercent}
+      usedAreaM2={usedAreaM2}
+      totalAreaM2={totalAreaM2}
+      unitPref={unitPref}
+      areaUnitLabel={areaUnitLabel}
+      primaryGardenId={primaryGarden?.id ?? null}
+      calendarTimelinePlants={calendarTimelinePlants}
+      currentWeek={currentWeek}
+      hasNextWeekTasks={hasNextWeekTasks}
+      thisWeekByPhase={thisWeekByPhaseSerialized}
+      nextWeekByPhase={nextWeekByPhaseSerialized}
+      pastObservations={pastObservations}
+      currentYear={currentYear}
+    />
   );
 }

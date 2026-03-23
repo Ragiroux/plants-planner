@@ -343,7 +343,7 @@ export function GardenPlan({
             className="text-3xl font-bold text-[#2A2622]"
             style={{ fontFamily: "Fraunces, serif" }}
           >
-            Plan du jardin
+            Plan du potager
           </h1>
           <p className="text-sm text-[#7D766E] mt-1">{garden.name}</p>
         </div>
@@ -467,7 +467,7 @@ export function GardenPlan({
 
             {userPlants.length === 0 && (
               <p className="text-xs text-[#7D766E]">
-                Aucune plante dans votre jardin.
+                Aucune plante dans votre potager.
               </p>
             )}
 

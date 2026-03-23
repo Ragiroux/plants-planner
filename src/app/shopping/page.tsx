@@ -69,7 +69,7 @@ export default async function ShoppingPage() {
         <div className="bg-white rounded-xl border border-[#E8E4DE] p-8 text-center">
           <span className="text-4xl block mb-3">🌱</span>
           <p className="text-sm text-[#7D766E]">
-            Ajoutez des plantes à votre jardin pour générer votre liste d&apos;achats
+            Ajoutez des plantes à votre potager pour générer votre liste d&apos;achats
           </p>
         </div>
       ) : (
