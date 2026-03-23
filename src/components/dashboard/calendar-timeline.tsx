@@ -27,18 +27,18 @@ interface CalendarTimelineProps {
 
 const MONTHS = [
   { name: "Fév", startWeek: 1 },
-  { name: "Mar", startWeek: 5 },
-  { name: "Avr", startWeek: 9 },
-  { name: "Mai", startWeek: 14 },
-  { name: "Juin", startWeek: 19 },
-  { name: "Juil", startWeek: 23 },
-  { name: "Août", startWeek: 27 },
-  { name: "Sep", startWeek: 32 },
-  { name: "Oct", startWeek: 36 },
+  { name: "Mar", startWeek: 4 },
+  { name: "Avr", startWeek: 8 },
+  { name: "Mai", startWeek: 12 },
+  { name: "Juin", startWeek: 16 },
+  { name: "Juil", startWeek: 20 },
+  { name: "Août", startWeek: 24 },
+  { name: "Sep", startWeek: 28 },
+  { name: "Oct", startWeek: 32 },
 ];
 
 const DISPLAY_WEEK_MIN = 1;
-const DISPLAY_WEEK_MAX = 40;
+const DISPLAY_WEEK_MAX = 36;
 const DISPLAY_SPAN = DISPLAY_WEEK_MAX - DISPLAY_WEEK_MIN;
 
 function weekToPercent(week: number): number {

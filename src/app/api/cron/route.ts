@@ -509,11 +509,11 @@ export async function POST(request: NextRequest) {
           systemPrompt:
             "Tu es un assistant de jardinage expert pour le Québec. Tu réponds en français.",
           userMessage: `Contexte jardinier: ${insightContext}\n\nEn 2-3 phrases, donne un conseil de jardinage personnalisé et proactif basé sur ce contexte. Sois spécifique aux plantes du jardinier et à la période de l'année.`,
-          maxTokens: 200,
+          maxTokens: 4000,
         });
 
         if (insightResult.text) {
-          sections.push(`🤖 *Conseil IA:*\n${insightResult.text}`);
+          sections.push(`🤖 *Conseil:*\n${insightResult.text}`);
         }
       } catch {
         // AI insight failure is non-fatal; skip silently

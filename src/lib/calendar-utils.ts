@@ -26,23 +26,23 @@ export function getFrenchDate(date: Date): string {
 }
 
 const WEEK_MIN = 1;
-const WEEK_MAX = 39;
+const WEEK_MAX = 35;
 const OFF_SEASON_END = 39;
 
-// Month boundaries matching the écoumène calendar column layout.
-// Each month is divided into equal "weeks" (columns on the chart).
-// Feb: 4 weeks (1-4), Mar: 4 (5-8), Apr: 5 (9-13), May: 5 (14-18),
-// Jun: 4 (19-22), Jul: 4 (23-26), Aug: 5 (27-31), Sep: 4 (32-35), Oct: 4 (36-39)
+// Month boundaries matching the écoumène calendar column layout exactly.
+// The chart has 35 columns: Feb 3 cols (w2-w4) + 8 months × 4 cols each.
+// Seed data positions: 1-3 = Feb, 4-7 = Mar, 8-11 = Apr, ..., 32-35 = Oct.
+// Values 36-39 represent extended harvest beyond the chart.
 const MONTH_STARTS: [number, number][] = [
-  [1, 1],   // [startWeek, monthIndex 0-based] Feb
-  [5, 2],   // Mar
-  [9, 3],   // Apr
-  [14, 4],  // May
-  [19, 5],  // Jun
-  [23, 6],  // Jul
-  [27, 7],  // Aug
-  [32, 8],  // Sep
-  [36, 9],  // Oct
+  [1, 1],   // [startWeek, monthIndex 0-based] Feb (weeks 1-3)
+  [4, 2],   // Mar (weeks 4-7)
+  [8, 3],   // Apr (weeks 8-11)
+  [12, 4],  // May (weeks 12-15)
+  [16, 5],  // Jun (weeks 16-19)
+  [20, 6],  // Jul (weeks 20-23)
+  [24, 7],  // Aug (weeks 24-27)
+  [28, 8],  // Sep (weeks 28-31)
+  [32, 9],  // Oct (weeks 32-35)
 ];
 
 export function getCurrentWeek(): number {
@@ -57,6 +57,14 @@ export function getCurrentWeek(): number {
   if (!entry) return WEEK_MIN;
 
   const startWeek = entry[0];
+
+  if (month === 1) {
+    // February: chart starts at week 2 of the month (day ~8)
+    if (day < 8) return WEEK_MIN;
+    const weekInMonth = Math.floor((day - 8) / 7);
+    return Math.min(startWeek + weekInMonth, 3);
+  }
+
   const weekInMonth = Math.floor((day - 1) / 7);
   return Math.max(WEEK_MIN, Math.min(WEEK_MAX, startWeek + weekInMonth));
 }
@@ -80,6 +88,13 @@ export function weekToDate(week: number, year?: number): Date {
   }
 
   const weekInMonth = week - monthStartWeek; // 0-based
+
+  if (monthIndex === 1) {
+    // February: chart starts at week 2, so day offset = 8
+    const day = weekInMonth * 7 + 8;
+    return new Date(targetYear, monthIndex, day);
+  }
+
   const day = weekInMonth * 7 + 1;
   return new Date(targetYear, monthIndex, day);
 }
@@ -125,13 +140,13 @@ export function getSeasonPhase(week: number): SeasonPhase {
   if (week < WEEK_MIN || week > OFF_SEASON_END) {
     return "hors_saison";
   }
-  if (week <= 8) {
+  if (week <= 7) {
     return "semis_interieur";
   }
-  if (week <= 16) {
+  if (week <= 15) {
     return "transplantation";
   }
-  if (week <= 22) {
+  if (week <= 23) {
     return "croissance";
   }
   return "recolte";

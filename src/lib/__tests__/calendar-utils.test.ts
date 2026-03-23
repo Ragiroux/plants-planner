@@ -10,88 +10,97 @@ import {
 } from "../calendar-utils";
 
 describe("getCurrentWeek", () => {
-  it("returns a number between 1 and 39", () => {
+  it("returns a number between 1 and 35", () => {
     const week = getCurrentWeek();
     expect(week).toBeGreaterThanOrEqual(1);
-    expect(week).toBeLessThanOrEqual(39);
+    expect(week).toBeLessThanOrEqual(35);
   });
 });
 
 describe("weekToDate", () => {
-  it("week 1 maps to February 1", () => {
+  // February: weeks 1-3 (chart columns Feb w2-w4)
+  it("week 1 maps to February 8 (Feb week 2)", () => {
     const date = weekToDate(1, 2026);
     expect(date.getMonth()).toBe(1);
-    expect(date.getDate()).toBe(1);
+    expect(date.getDate()).toBe(8);
   });
 
-  it("week 4 maps to February 22", () => {
-    const date = weekToDate(4, 2026);
+  it("week 3 maps to February 22 (Feb week 4)", () => {
+    const date = weekToDate(3, 2026);
     expect(date.getMonth()).toBe(1);
     expect(date.getDate()).toBe(22);
   });
 
-  it("week 5 maps to March 1", () => {
-    const date = weekToDate(5, 2026);
+  // March: weeks 4-7
+  it("week 4 maps to March 1", () => {
+    const date = weekToDate(4, 2026);
     expect(date.getMonth()).toBe(2);
     expect(date.getDate()).toBe(1);
   });
 
-  it("week 8 maps to March 22", () => {
-    const date = weekToDate(8, 2026);
+  it("week 7 maps to March 22", () => {
+    const date = weekToDate(7, 2026);
     expect(date.getMonth()).toBe(2);
     expect(date.getDate()).toBe(22);
   });
 
-  it("week 9 maps to April 1", () => {
-    const date = weekToDate(9, 2026);
+  // April: weeks 8-11
+  it("week 8 maps to April 1", () => {
+    const date = weekToDate(8, 2026);
     expect(date.getMonth()).toBe(3);
     expect(date.getDate()).toBe(1);
   });
 
-  it("week 13 maps to April 29", () => {
-    const date = weekToDate(13, 2026);
+  it("week 9 maps to April 8", () => {
+    const date = weekToDate(9, 2026);
     expect(date.getMonth()).toBe(3);
-    expect(date.getDate()).toBe(29);
+    expect(date.getDate()).toBe(8);
   });
 
-  it("week 14 maps to May 1", () => {
-    const date = weekToDate(14, 2026);
+  // May: weeks 12-15
+  it("week 12 maps to May 1", () => {
+    const date = weekToDate(12, 2026);
     expect(date.getMonth()).toBe(4);
     expect(date.getDate()).toBe(1);
   });
 
-  it("week 19 maps to June 1", () => {
-    const date = weekToDate(19, 2026);
+  // June: weeks 16-19
+  it("week 16 maps to June 1", () => {
+    const date = weekToDate(16, 2026);
     expect(date.getMonth()).toBe(5);
     expect(date.getDate()).toBe(1);
   });
 
-  it("week 23 maps to July 1", () => {
-    const date = weekToDate(23, 2026);
+  // July: weeks 20-23
+  it("week 20 maps to July 1", () => {
+    const date = weekToDate(20, 2026);
     expect(date.getMonth()).toBe(6);
     expect(date.getDate()).toBe(1);
   });
 
-  it("week 27 maps to August 1", () => {
-    const date = weekToDate(27, 2026);
+  // August: weeks 24-27
+  it("week 24 maps to August 1", () => {
+    const date = weekToDate(24, 2026);
     expect(date.getMonth()).toBe(7);
     expect(date.getDate()).toBe(1);
   });
 
-  it("week 32 maps to September 1", () => {
-    const date = weekToDate(32, 2026);
+  // September: weeks 28-31
+  it("week 28 maps to September 1", () => {
+    const date = weekToDate(28, 2026);
     expect(date.getMonth()).toBe(8);
     expect(date.getDate()).toBe(1);
   });
 
-  it("week 36 maps to October 1", () => {
-    const date = weekToDate(36, 2026);
+  // October: weeks 32-35
+  it("week 32 maps to October 1", () => {
+    const date = weekToDate(32, 2026);
     expect(date.getMonth()).toBe(9);
     expect(date.getDate()).toBe(1);
   });
 
-  it("week 39 maps to October 22", () => {
-    const date = weekToDate(39, 2026);
+  it("week 35 maps to October 22", () => {
+    const date = weekToDate(35, 2026);
     expect(date.getMonth()).toBe(9);
     expect(date.getDate()).toBe(22);
   });
@@ -133,67 +142,66 @@ describe("getMonthForWeek", () => {
     expect(getMonthForWeek(1)).toBe("Février");
   });
 
-  it("returns Février for week 4", () => {
-    expect(getMonthForWeek(4)).toBe("Février");
+  it("returns Février for week 3", () => {
+    expect(getMonthForWeek(3)).toBe("Février");
   });
 
-  it("returns Mars for week 5", () => {
-    expect(getMonthForWeek(5)).toBe("Mars");
+  it("returns Mars for week 4", () => {
+    expect(getMonthForWeek(4)).toBe("Mars");
   });
 
-  it("returns Mars for week 8", () => {
-    expect(getMonthForWeek(8)).toBe("Mars");
+  it("returns Mars for week 7", () => {
+    expect(getMonthForWeek(7)).toBe("Mars");
   });
 
-  it("returns Avril for week 9", () => {
-    expect(getMonthForWeek(9)).toBe("Avril");
+  it("returns Avril for week 8", () => {
+    expect(getMonthForWeek(8)).toBe("Avril");
   });
 
-  it("returns Avril for week 13", () => {
-    expect(getMonthForWeek(13)).toBe("Avril");
+  it("returns Avril for week 11", () => {
+    expect(getMonthForWeek(11)).toBe("Avril");
   });
 
-  it("returns Mai for week 14", () => {
-    expect(getMonthForWeek(14)).toBe("Mai");
+  it("returns Mai for week 12", () => {
+    expect(getMonthForWeek(12)).toBe("Mai");
   });
 
-  it("returns Juin for week 19", () => {
-    expect(getMonthForWeek(19)).toBe("Juin");
+  it("returns Juin for week 16", () => {
+    expect(getMonthForWeek(16)).toBe("Juin");
   });
 
-  it("returns Juillet for week 23", () => {
-    expect(getMonthForWeek(23)).toBe("Juillet");
+  it("returns Juillet for week 20", () => {
+    expect(getMonthForWeek(20)).toBe("Juillet");
   });
 
-  it("returns Août for week 27", () => {
-    expect(getMonthForWeek(27)).toBe("Août");
+  it("returns Août for week 24", () => {
+    expect(getMonthForWeek(24)).toBe("Août");
   });
 
-  it("returns Septembre for week 32", () => {
-    expect(getMonthForWeek(32)).toBe("Septembre");
+  it("returns Septembre for week 28", () => {
+    expect(getMonthForWeek(28)).toBe("Septembre");
   });
 
-  it("returns Octobre for week 36", () => {
-    expect(getMonthForWeek(36)).toBe("Octobre");
+  it("returns Octobre for week 32", () => {
+    expect(getMonthForWeek(32)).toBe("Octobre");
   });
 });
 
 describe("getWeekLabel", () => {
-  it("returns Février semaine 1 for week 1", () => {
-    expect(getWeekLabel(1)).toBe("Février, semaine 1");
+  it("returns Février semaine 2 for week 1", () => {
+    expect(getWeekLabel(1)).toBe("Février, semaine 2");
   });
 
-  it("returns Mars semaine 4 for week 8", () => {
-    expect(getWeekLabel(8)).toBe("Mars, semaine 4");
+  it("returns Mars semaine 4 for week 7", () => {
+    expect(getWeekLabel(7)).toBe("Mars, semaine 4");
   });
 
-  it("returns Avril semaine 1 for week 9", () => {
-    expect(getWeekLabel(9)).toBe("Avril, semaine 1");
+  it("returns Avril semaine 1 for week 8", () => {
+    expect(getWeekLabel(8)).toBe("Avril, semaine 1");
   });
 
-  it("returns Avril semaine 2 for week 10", () => {
-    const label = getWeekLabel(10);
-    expect(label).toBe("Avril, semaine 2");
+  it("returns Avril semaine 2 for week 9", () => {
+    expect(getWeekLabel(9)).toBe("Avril, semaine 2");
   });
 });
 
@@ -210,28 +218,28 @@ describe("getSeasonPhase", () => {
     expect(getSeasonPhase(1)).toBe("semis_interieur");
   });
 
-  it("returns semis_interieur for week 8", () => {
-    expect(getSeasonPhase(8)).toBe("semis_interieur");
+  it("returns semis_interieur for week 7", () => {
+    expect(getSeasonPhase(7)).toBe("semis_interieur");
   });
 
-  it("returns transplantation for week 9", () => {
-    expect(getSeasonPhase(9)).toBe("transplantation");
+  it("returns transplantation for week 8", () => {
+    expect(getSeasonPhase(8)).toBe("transplantation");
   });
 
-  it("returns transplantation for week 16", () => {
-    expect(getSeasonPhase(16)).toBe("transplantation");
+  it("returns transplantation for week 15", () => {
+    expect(getSeasonPhase(15)).toBe("transplantation");
   });
 
-  it("returns croissance for week 17", () => {
-    expect(getSeasonPhase(17)).toBe("croissance");
+  it("returns croissance for week 16", () => {
+    expect(getSeasonPhase(16)).toBe("croissance");
   });
 
-  it("returns croissance for week 22", () => {
-    expect(getSeasonPhase(22)).toBe("croissance");
+  it("returns croissance for week 23", () => {
+    expect(getSeasonPhase(23)).toBe("croissance");
   });
 
-  it("returns recolte for week 23", () => {
-    expect(getSeasonPhase(23)).toBe("recolte");
+  it("returns recolte for week 24", () => {
+    expect(getSeasonPhase(24)).toBe("recolte");
   });
 
   it("returns recolte for week 39", () => {
