@@ -1,0 +1,17 @@
+name: Daily Garden Notifications
+
+on:
+  schedule:
+    # Tous les jours à 8h00 Eastern (12:00 UTC)
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger cron endpoint
+        run: |
+          curl -f -X POST "${{ secrets.PLANTES_URL }}/api/cron" \
+            -H "Authorization: Bearer ${{ secrets.PLANTES_CRON_SECRET }}" \
+            -H "Content-Type: application/json"
