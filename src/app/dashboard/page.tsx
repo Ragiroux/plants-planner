@@ -188,6 +188,8 @@ export default async function DashboardPage() {
       name: row.plant.name,
       plantedDate: row.userPlant.planted_date ?? null,
       daysIndoorToRepiquage: row.plant.days_indoor_to_repiquage ?? null,
+      daysRepiquageToTransplant: row.plant.days_repiquage_to_transplant ?? null,
+      daysTransplantToHarvest: row.plant.days_transplant_to_harvest ?? null,
       frostTolerance: row.plant.frost_tolerance ?? null,
       spacingCm: row.plant.spacing_cm ?? null,
       rowSpacingCm: row.plant.row_spacing_cm ?? null,

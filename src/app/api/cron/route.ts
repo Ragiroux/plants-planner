@@ -12,7 +12,8 @@ import {
 import { eq, lt, and, isNotNull, desc } from "drizzle-orm";
 import { getCurrentWeek, getWeekLabel } from "@/lib/calendar-utils";
 import { callAI, getAIProvider } from "@/lib/ai";
-import { getRepiquageStatus } from "@/lib/phase-utils";
+import { getSmartActivePhases, getRepiquageStatus } from "@/lib/phase-utils";
+import type { Phase, PlantActionRow } from "@/lib/phase-utils";
 
 interface PlantWithCalendar {
   name: string;
@@ -44,32 +45,39 @@ interface PlantWithCalendar {
   row_spacing_cm: number | null;
 }
 
-type Phase =
-  | "indoor_sow"
-  | "transplant"
-  | "outdoor_sow"
-  | "garden_transplant"
-  | "harvest";
-
-function getActivePhases(
-  plant: PlantWithCalendar,
-  week: number
-): Phase[] {
-  const phases: Phase[] = [];
-  const check = (start: number | null, end: number | null, phase: Phase) => {
-    if (start !== null && end !== null && week >= start && week <= end)
-      phases.push(phase);
+function plantWithCalendarToActionRow(plant: PlantWithCalendar): PlantActionRow {
+  return {
+    id: plant.userPlantId,
+    plantId: plant.userPlantId,
+    name: plant.name,
+    plantedDate: plant.plantedDate,
+    daysIndoorToRepiquage: plant.daysIndoorToRepiquage,
+    daysRepiquageToTransplant: plant.daysRepiquageToTransplant,
+    daysTransplantToHarvest: plant.daysTransplantToHarvest,
+    frostTolerance: plant.frost_tolerance,
+    spacingCm: plant.spacing_cm,
+    rowSpacingCm: plant.row_spacing_cm,
+    calendar: {
+      indoor_sow_start: plant.indoor_sow_start,
+      indoor_sow_end: plant.indoor_sow_end,
+      transplant_start: plant.transplant_start,
+      transplant_end: plant.transplant_end,
+      outdoor_sow_start: plant.outdoor_sow_start,
+      outdoor_sow_end: plant.outdoor_sow_end,
+      garden_transplant_start: plant.garden_transplant_start,
+      garden_transplant_end: plant.garden_transplant_end,
+      harvest_start: plant.harvest_start,
+      harvest_end: plant.harvest_end,
+      depth_mm: plant.depth_mm,
+      germination_temp_min: plant.germination_temp_min,
+      germination_temp_max: plant.germination_temp_max,
+      sowing_method: plant.sowing_method,
+      luminosity: plant.luminosity,
+      height_cm: plant.height_cm,
+      days_to_maturity_min: plant.days_to_maturity_min,
+      days_to_maturity_max: plant.days_to_maturity_max,
+    },
   };
-  check(plant.indoor_sow_start, plant.indoor_sow_end, "indoor_sow");
-  check(plant.transplant_start, plant.transplant_end, "transplant");
-  check(plant.outdoor_sow_start, plant.outdoor_sow_end, "outdoor_sow");
-  check(
-    plant.garden_transplant_start,
-    plant.garden_transplant_end,
-    "garden_transplant"
-  );
-  check(plant.harvest_start, plant.harvest_end, "harvest");
-  return phases;
 }
 
 function isStartingThisWeek(
@@ -81,14 +89,7 @@ function isStartingThisWeek(
 
 function generateTips(plant: PlantWithCalendar, week: number): string[] {
   const tips: string[] = [];
-  const phases = getActivePhases(plant, week);
-
-  // Smart timing: don't show transplant when repiquage is far away
-  const repStatus = getRepiquageStatus(plant.plantedDate, plant.daysIndoorToRepiquage);
-  if (repStatus.status === "growing") {
-    const idx = phases.indexOf("transplant");
-    if (idx !== -1) phases.splice(idx, 1);
-  }
+  const phases = getSmartActivePhases(plantWithCalendarToActionRow(plant), week);
 
   if (phases.length === 0) return tips;
 
@@ -473,7 +474,7 @@ export async function POST(request: NextRequest) {
       try {
         const plantSummary = plantsWithCalendar
           .map((p) => {
-            const phases = getActivePhases(p, currentWeek);
+            const phases = getSmartActivePhases(plantWithCalendarToActionRow(p), currentWeek);
             return `${p.name} (${phases.length > 0 ? phases.join(", ") : "hors saison"})`;
           })
           .join(", ");
