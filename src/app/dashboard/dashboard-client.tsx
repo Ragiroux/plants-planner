@@ -9,6 +9,7 @@ import { generateTip, type TipContext } from "@/lib/tip-templates";
 import type { UnitPreference } from "@/lib/units";
 import { fromMeters } from "@/lib/units";
 import type { PlantCalendar } from "@/lib/plant-utils";
+import type { SmartTip } from "@/lib/smart-tips";
 
 interface TrackingPlant {
   id: number;
@@ -104,6 +105,7 @@ interface DashboardClientProps {
   nextWeekByPhase: Record<string, Array<{ id: number; name: string }>>;
   pastObservations: PastObservation[];
   currentYear: number;
+  smartTips: SmartTip[];
 }
 
 function ProgressBar({
@@ -156,6 +158,7 @@ export function DashboardClient({
   nextWeekByPhase,
   pastObservations,
   currentYear,
+  smartTips,
 }: DashboardClientProps) {
   const [isPending, startTransition] = useTransition();
   const [advancingPlantId, setAdvancingPlantId] = useState<number | null>(null);
@@ -539,6 +542,25 @@ export function DashboardClient({
                     </span>
                     <span className="text-xs text-[#D4A017] whitespace-nowrap">
                       {plant.upcomingTransition!.label} dans {plant.upcomingTransition!.daysUntil} jour{plant.upcomingTransition!.daysUntil !== 1 ? "s" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* CONSEILS INTELLIGENTS */}
+          {smartTips.length > 0 && (
+            <section className="bg-white rounded-xl border border-[#E8E4DE] border-l-4 border-l-[#6B5CE7] p-4 space-y-3">
+              <h2 className="text-base font-bold text-[#6B5CE7]" style={{ fontFamily: "Fraunces, serif" }}>
+                Conseils
+              </h2>
+              <ul className="space-y-2">
+                {smartTips.map((tip, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <span className="shrink-0">{tip.icon}</span>
+                    <span className={tip.severity === "urgent" ? "text-[#C4463A] font-medium" : tip.severity === "warning" ? "text-[#3D3832]" : "text-[#7D766E]"}>
+                      {tip.message}
                     </span>
                   </li>
                 ))}

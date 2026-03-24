@@ -9,12 +9,15 @@ import {
   notification_logs,
   observations,
 } from "@/lib/db/schema";
-import { eq, lt, and, isNotNull, desc } from "drizzle-orm";
+import { eq, lt, and, isNotNull, desc, inArray, max } from "drizzle-orm";
 import { getCurrentWeek, getWeekLabel } from "@/lib/calendar-utils";
 import { callAI, getAIProvider } from "@/lib/ai";
 import { getSmartActivePhases, getRepiquageStatus } from "@/lib/phase-utils";
 import type { Phase, PlantActionRow } from "@/lib/phase-utils";
 import { getEffectiveLifecycleDurations, getPhaseTransitionDays } from "@/lib/lifecycle-calc";
+import { generateSmartTips } from "@/lib/smart-tips";
+import type { SmartTipContext } from "@/lib/smart-tips";
+import { getPlantEmoji } from "@/lib/plant-utils";
 
 interface PlantWithCalendar {
   name: string;
@@ -400,11 +403,13 @@ export async function POST(request: NextRequest) {
         userPlantId: user_plants.id,
         plantedDate: user_plants.planted_date,
         sowingType: user_plants.sowing_type,
+        transplantAt: user_plants.transplant_at,
         plantName: plants.name,
         plantId: plants.id,
         spacingCm: plants.spacing_cm,
         rowSpacingCm: plants.row_spacing_cm,
         frostTolerance: plants.frost_tolerance,
+        wateringFreq: plants.watering_freq,
         daysIndoorToRepiquage: plants.days_indoor_to_repiquage,
         daysRepiquageToTransplant: plants.days_repiquage_to_transplant,
         daysTransplantToHarvest: plants.days_transplant_to_harvest,
@@ -527,6 +532,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let weatherForSmartTips: SmartTipContext["weather"] = null;
     if (user.location_lat && user.location_lon) {
       const weatherMsg = await fetchWeatherForSlack(
         user.location_lat,
@@ -536,6 +542,95 @@ export async function POST(request: NextRequest) {
       if (weatherMsg) {
         sections.push(weatherMsg);
       }
+
+      try {
+        const weatherRes = await fetch(
+          `${baseUrl}/api/weather?lat=${user.location_lat}&lon=${user.location_lon}`,
+          { signal: AbortSignal.timeout(5000) }
+        );
+        if (weatherRes.ok) {
+          const weatherData = await weatherRes.json();
+          if (!weatherData.error) {
+            weatherForSmartTips = {
+              forecast: weatherData.forecast.map(
+                (d: { day: string; min: number; max: number }) => ({
+                  day: d.day,
+                  min: d.min,
+                  max: d.max,
+                })
+              ),
+              frostWarning: weatherData.frost_warning,
+            };
+          }
+        }
+      } catch {
+        // Non-fatal; proceed without weather smart tips
+      }
+    }
+
+    // Smart tips (watering, heat, frost, fertilization)
+    const smartTipUserPlantIds = userPlantRows.map((r) => r.userPlantId);
+
+    const cronLastWatering =
+      smartTipUserPlantIds.length > 0
+        ? await db
+            .select({
+              userPlantId: plant_steps.user_plant_id,
+              lastWatering: max(plant_steps.completed_at),
+            })
+            .from(plant_steps)
+            .where(
+              and(
+                eq(plant_steps.step_type, "arrosage"),
+                inArray(plant_steps.user_plant_id, smartTipUserPlantIds)
+              )
+            )
+            .groupBy(plant_steps.user_plant_id)
+        : [];
+
+    const cronLastFertilization =
+      smartTipUserPlantIds.length > 0
+        ? await db
+            .select({
+              userPlantId: plant_steps.user_plant_id,
+              lastFertilization: max(plant_steps.completed_at),
+            })
+            .from(plant_steps)
+            .where(
+              and(
+                eq(plant_steps.step_type, "fertilisation"),
+                inArray(plant_steps.user_plant_id, smartTipUserPlantIds)
+              )
+            )
+            .groupBy(plant_steps.user_plant_id)
+        : [];
+
+    const cronLastWateringMap = new Map(
+      cronLastWatering.map((r) => [r.userPlantId, r.lastWatering])
+    );
+    const cronLastFertilizationMap = new Map(
+      cronLastFertilization.map((r) => [r.userPlantId, r.lastFertilization])
+    );
+
+    const smartTipPlants: SmartTipContext["plants"] = userPlantRows.map((row) => ({
+      name: row.plantName,
+      emoji: getPlantEmoji(row.plantName),
+      frostTolerance: row.frostTolerance ?? null,
+      wateringFreq: row.wateringFreq ?? null,
+      isInGarden: row.transplantAt !== null,
+      lastWatering: cronLastWateringMap.get(row.userPlantId) ?? null,
+      lastFertilization: cronLastFertilizationMap.get(row.userPlantId) ?? null,
+    }));
+
+    const smartTips = generateSmartTips({
+      plants: smartTipPlants,
+      weather: weatherForSmartTips,
+      today: new Date(),
+    });
+
+    if (smartTips.length > 0) {
+      const tipLines = smartTips.map((t) => `• ${t.message}`).join("\n");
+      sections.push(`💡 *Conseils*\n${tipLines}`);
     }
 
     if (getAIProvider()) {

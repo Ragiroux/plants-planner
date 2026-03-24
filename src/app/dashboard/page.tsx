@@ -9,7 +9,7 @@ import {
   plant_steps,
   observations,
 } from "@/lib/db/schema";
-import { eq, inArray, lt, and, isNotNull } from "drizzle-orm";
+import { eq, inArray, lt, and, isNotNull, max } from "drizzle-orm";
 import Link from "next/link";
 import {
   getCurrentWeek,
@@ -31,6 +31,7 @@ import {
 import type { PlantActionRow } from "@/lib/phase-utils";
 import { generateTip, type TipContext } from "@/lib/tip-templates";
 import { getEffectiveLifecycleDurations } from "@/lib/lifecycle-calc";
+import { generateSmartTips, type SmartTip, type SmartTipContext } from "@/lib/smart-tips";
 import { DashboardClient } from "./dashboard-client";
 
 export default async function DashboardPage() {
@@ -225,6 +226,102 @@ export default async function DashboardPage() {
   const pastObservations = allObservations.filter(
     (o) => Math.abs(o.week_number - currentWeek) <= 2
   );
+
+  // Smart tips: last watering and fertilization per user_plant
+  const userPlantIds = userPlantRows.map((r) => r.userPlant.id);
+
+  const lastWateringRows =
+    userPlantIds.length > 0
+      ? await db
+          .select({
+            userPlantId: plant_steps.user_plant_id,
+            lastWatering: max(plant_steps.completed_at),
+          })
+          .from(plant_steps)
+          .where(
+            and(
+              eq(plant_steps.step_type, "arrosage"),
+              inArray(plant_steps.user_plant_id, userPlantIds)
+            )
+          )
+          .groupBy(plant_steps.user_plant_id)
+      : [];
+
+  const lastFertilizationRows =
+    userPlantIds.length > 0
+      ? await db
+          .select({
+            userPlantId: plant_steps.user_plant_id,
+            lastFertilization: max(plant_steps.completed_at),
+          })
+          .from(plant_steps)
+          .where(
+            and(
+              eq(plant_steps.step_type, "fertilisation"),
+              inArray(plant_steps.user_plant_id, userPlantIds)
+            )
+          )
+          .groupBy(plant_steps.user_plant_id)
+      : [];
+
+  const lastWateringMap = new Map(
+    lastWateringRows.map((r) => [r.userPlantId, r.lastWatering])
+  );
+  const lastFertilizationMap = new Map(
+    lastFertilizationRows.map((r) => [r.userPlantId, r.lastFertilization])
+  );
+
+  // Fetch weather if user has location
+  const userWithLocation = await db.query.users.findFirst({
+    where: (u, { eq }) => eq(u.id, session.user.id),
+    columns: { location_lat: true, location_lon: true },
+  });
+
+  let weatherForTips: SmartTipContext["weather"] = null;
+  if (userWithLocation?.location_lat && userWithLocation?.location_lon) {
+    try {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL ??
+        (process.env.NEXTAUTH_URL ?? "http://localhost:3000");
+      const weatherRes = await fetch(
+        `${baseUrl}/api/weather?lat=${userWithLocation.location_lat}&lon=${userWithLocation.location_lon}`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      if (weatherRes.ok) {
+        const weatherData = await weatherRes.json();
+        if (!weatherData.error) {
+          weatherForTips = {
+            forecast: weatherData.forecast.map(
+              (d: { day: string; min: number; max: number }) => ({
+                day: d.day,
+                min: d.min,
+                max: d.max,
+              })
+            ),
+            frostWarning: weatherData.frost_warning,
+          };
+        }
+      }
+    } catch {
+      // Weather fetch failure is non-fatal; proceed without it
+    }
+  }
+
+  const smartTipPlants: SmartTipContext["plants"] = userPlantRows.map((row) => ({
+    name: row.plant.name,
+    emoji: getPlantEmoji(row.plant.name),
+    frostTolerance: row.plant.frost_tolerance ?? null,
+    wateringFreq: row.plant.watering_freq ?? null,
+    isInGarden: row.userPlant.transplant_at !== null,
+    lastWatering: lastWateringMap.get(row.userPlant.id) ?? null,
+    lastFertilization: lastFertilizationMap.get(row.userPlant.id) ?? null,
+  }));
+
+  const smartTips: SmartTip[] = generateSmartTips({
+    plants: smartTipPlants,
+    weather: weatherForTips,
+    today,
+  });
 
   const nextWeek = currentWeek + 1;
   const thisWeekByPhase = new Map<string, PlantActionRow[]>();
@@ -551,6 +648,7 @@ export default async function DashboardPage() {
       nextWeekByPhase={nextWeekByPhaseSerialized}
       pastObservations={pastObservations}
       currentYear={currentYear}
+      smartTips={smartTips}
     />
   );
 }
