@@ -30,6 +30,7 @@ const frostLabels: Record<string, string> = {
 const stepTypeLabels: Record<string, string> = {
   semis_interieur: "🌱 Semis intérieur",
   semis_exterieur: "🌿 Semis extérieur",
+  germination: "🌿 Germé",
   repiquage: "🪴 Repiquage",
   transplantation: "🏡 Transplantation",
   entretien: "🔧 Entretien",
@@ -41,6 +42,7 @@ const stepTypeLabels: Record<string, string> = {
 const STEP_TYPE_OPTIONS = [
   "semis_interieur",
   "semis_exterieur",
+  "germination",
   "repiquage",
   "transplantation",
   "entretien",

@@ -373,7 +373,10 @@ export function DashboardClient({
                   return (
                     <div key={plant.id} className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
+                        <Link
+                          href={`/garden/${plant.id}`}
+                          className="flex items-center gap-2 min-w-0 rounded-lg hover:bg-[#F5F2EE] px-1 -mx-1 py-0.5 transition-colors"
+                        >
                           <span className="text-xl shrink-0">{plant.emoji}</span>
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-[#2A2622] truncate">
@@ -384,7 +387,7 @@ export function DashboardClient({
                             </p>
                             <p className="text-xs text-[#7D766E]">{segLabel}</p>
                           </div>
-                        </div>
+                        </Link>
                         <div className="text-right shrink-0">
                           <p
                             className="text-xs font-medium"
@@ -613,7 +616,11 @@ export function DashboardClient({
                     : null;
 
                   return (
-                    <div key={plant.id} className="space-y-1">
+                    <Link
+                      key={plant.id}
+                      href={`/garden/${plant.id}`}
+                      className="block space-y-1 rounded-lg px-2 py-1.5 -mx-2 hover:bg-[#F5F2EE] transition-colors cursor-pointer"
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-lg shrink-0">{plant.emoji}</span>
@@ -646,7 +653,7 @@ export function DashboardClient({
                         isOverdue={false}
                         color={segColor}
                       />
-                    </div>
+                    </Link>
                   );
                 })}
               </div>

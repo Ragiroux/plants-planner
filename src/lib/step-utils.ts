@@ -1,6 +1,7 @@
 export type StepType =
   | "semis_interieur"
   | "semis_exterieur"
+  | "germination"
   | "repiquage"
   | "transplantation"
   | "entretien"
@@ -43,6 +44,10 @@ export function computeNextActionDate(
     return next.toISOString().slice(0, 10);
   }
 
+  if (stepType === "germination") {
+    return null; // No repeat — one-time event
+  }
+
   // Maintenance steps (arrosage, fertilisation, entretien, semis_exterieur): repeat in 7 days
   const next = new Date(now);
   next.setDate(next.getDate() + 7);
@@ -53,6 +58,7 @@ const stepLabels: Record<StepType, string> = {
   arrosage: "💧 Arrosage",
   fertilisation: "🌿 Fertilisation",
   entretien: "🔧 Entretien",
+  germination: "🌿 Germé",
   repiquage: "🪴 Repiquage",
   transplantation: "🏡 Transplantation au potager",
   semis_interieur: "🌱 Semis intérieur",

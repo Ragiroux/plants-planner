@@ -27,6 +27,7 @@ export const sowingTypeEnum = pgEnum("sowing_type", ["indoor", "outdoor"]);
 export const stepTypeEnum = pgEnum("step_type", [
   "semis_interieur",
   "semis_exterieur",
+  "germination",
   "repiquage",
   "transplantation",
   "entretien",

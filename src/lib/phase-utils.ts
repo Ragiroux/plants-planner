@@ -43,6 +43,7 @@ export const phaseOrder: Phase[] = [
 export const stepTypeLabels: Record<string, string> = {
   semis_interieur: "Semis intérieur",
   semis_exterieur: "Semis extérieur",
+  germination: "Germé",
   repiquage: "Repiquage",
   transplantation: "Transplantation",
   entretien: "Entretien",
