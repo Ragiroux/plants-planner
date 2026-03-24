@@ -63,7 +63,7 @@ export function generateSmartTips(ctx: SmartTipContext): SmartTip[] {
         type: "watering",
         icon: "💧",
         plantName: plant.name,
-        message: `💧 ${plant.name} — Pas d'arrosage depuis ${daysSince} jours`,
+        message: `${plant.name} — Pas d'arrosage depuis ${daysSince} jours`,
         severity: "urgent",
       });
     } else if (daysSince === interval) {
@@ -71,7 +71,7 @@ export function generateSmartTips(ctx: SmartTipContext): SmartTip[] {
         type: "watering",
         icon: "💧",
         plantName: plant.name,
-        message: `💧 ${plant.name} — Arrosage recommandé aujourd'hui`,
+        message: `${plant.name} — Arrosage recommandé aujourd'hui`,
         severity: "warning",
       });
     }
@@ -85,7 +85,7 @@ export function generateSmartTips(ctx: SmartTipContext): SmartTip[] {
       tips.push({
         type: "heat",
         icon: "🌡️",
-        message: `🌡️ ${hottest.max}°C annoncé ${hottest.day} — Arrosez tôt le matin ou en soirée`,
+        message: `${hottest.max}°C annoncé ${hottest.day} — Arrosez tôt le matin ou en soirée`,
         severity: "warning",
       });
     }
@@ -106,14 +106,14 @@ export function generateSmartTips(ctx: SmartTipContext): SmartTip[] {
         tips.push({
           type: "frost",
           icon: "❄️",
-          message: `❄️ Gel prévu (${coldestMin}°C) — Protégez ${names}`,
+          message: `Gel prévu (${coldestMin}°C) — Protégez ${names}`,
           severity: "urgent",
         });
       } else {
         tips.push({
           type: "frost",
           icon: "❄️",
-          message: `❄️ Gel prévu (${coldestMin}°C) — Surveillez vos plants sensibles`,
+          message: `Gel prévu (${coldestMin}°C) — Surveillez vos plants sensibles`,
           severity: "info",
         });
       }
@@ -133,7 +133,7 @@ export function generateSmartTips(ctx: SmartTipContext): SmartTip[] {
         type: "fertilization",
         icon: "🌿",
         plantName: plant.name,
-        message: `🌿 ${plant.name} — Dernière fertilisation il y a ${daysSince} jours`,
+        message: `${plant.name} — Dernière fertilisation il y a ${daysSince} jours`,
         severity: "info",
       });
     }
