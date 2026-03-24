@@ -163,39 +163,56 @@ export function DashboardClient({
   const [pickerQuantity, setPickerQuantity] = useState(1);
   const [doneAction, setDoneAction] = useState<string | null>(null);
 
-  // Plants that are active (have biology data, planted, not complete)
-  const activePlants = trackingPlants.filter(
+  // All active plants (have biology data, planted, not complete)
+  const allActive = trackingPlants.filter(
     (p) => p.hasBiologyData && p.plantedDate !== null && !p.isComplete
   );
 
-  // IDs already shown in activePlants to avoid duplicates in bientot
-  const activePlantIds = new Set(activePlants.map((p) => p.id));
+  // ACTION NOW: plants with a concrete action to take
+  const actionNow = allActive.filter((p) =>
+    // Phase is done → advance button ready
+    (p.nextPhaseAction && p.currentSegmentProgress >= p.currentSegmentTotal) ||
+    // At garden stage → maintenance actions
+    p.gardenActions !== null
+  );
+  const actionNowIds = new Set(actionNow.map((p) => p.id));
 
-  // Plants with an upcoming phase transition within 7 days
-  const soonTransitions = trackingPlants.filter(
-    (p) => p.upcomingTransition !== null && !activePlantIds.has(p.id)
+  // ACTION SOON: transition within ≤7 days (not already in actionNow)
+  const actionSoon = allActive.filter(
+    (p) => p.upcomingTransition !== null && !actionNowIds.has(p.id)
+  );
+  const actionSoonIds = new Set(actionSoon.map((p) => p.id));
+
+  // GROWING: everything else active — just monitoring
+  const growing = allActive.filter(
+    (p) => !actionNowIds.has(p.id) && !actionSoonIds.has(p.id)
   );
 
-  // thisWeekByPhase rows not already covered by activePlants
+  // Plants without planted date
+  const noDate = trackingPlants.filter((p) => !p.plantedDate);
+
+  // thisWeekByPhase rows not covered by any of the above
+  const coveredIds = new Set([...actionNowIds, ...actionSoonIds, ...growing.map((p) => p.id)]);
   const thisWeekRows: Array<{ phase: string; row: ThisWeekRow }> = [];
   const seenThisWeek = new Set<number>();
   for (const phase of phaseOrder) {
     const rows = thisWeekByPhase[phase];
     if (!rows) continue;
     for (const row of rows) {
-      if (!seenThisWeek.has(row.id) && !activePlantIds.has(row.id)) {
+      if (!seenThisWeek.has(row.id) && !coveredIds.has(row.id)) {
         seenThisWeek.add(row.id);
         thisWeekRows.push({ phase, row });
       }
     }
   }
 
-  const hasAnyTasks =
+  const hasAnyContent =
     overdueSteps.length > 0 ||
-    activePlants.length > 0 ||
-    soonTransitions.length > 0 ||
+    actionNow.length > 0 ||
+    actionSoon.length > 0 ||
+    growing.length > 0 ||
+    noDate.length > 0 ||
     thisWeekRows.length > 0 ||
-    trackingPlants.filter((p) => !p.hasBiologyData || p.plantedDate === null).length > 0 ||
     hasNextWeekTasks;
 
   return (
@@ -307,41 +324,45 @@ export function DashboardClient({
             </section>
           )}
 
-          {/* À FAIRE MAINTENANT */}
-          {(activePlants.length > 0 || trackingPlants.some((p) => !p.hasBiologyData || p.plantedDate === null)) && (
-            <section className="bg-white rounded-xl border border-[#E8E4DE] border-l-4 border-l-[#2D5A3D] p-4 space-y-4">
+          {/* PLANTS WITHOUT DATE */}
+          {noDate.length > 0 && (
+            <section className="bg-white rounded-xl border border-[#E8E4DE] border-l-4 border-l-[#D4A017] p-4 space-y-3">
               <h2
-                className="text-base font-bold text-[#2D5A3D]"
+                className="text-base font-bold text-[#D4A017]"
                 style={{ fontFamily: "Fraunces, serif" }}
               >
-                👉 À faire maintenant
+                Date de semis manquante
+              </h2>
+              {noDate.map((plant) => (
+                <div key={plant.id} className="flex items-center gap-3 py-1">
+                  <span className="text-xl shrink-0">{plant.emoji}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-[#2A2622] truncate">
+                      {plant.name}
+                    </p>
+                    <p className="text-xs text-[#A9A29A] mt-0.5">
+                      Date de semis non enregistrée —{" "}
+                      <Link href="/garden" className="text-[#2D5A3D] hover:underline">
+                        Ajouter
+                      </Link>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {/* À FAIRE MAINTENANT — concrete actions */}
+          {actionNow.length > 0 && (
+            <section className="bg-white rounded-xl border border-[#E8E4DE] border-l-4 border-l-[#E8912D] p-4 space-y-4">
+              <h2
+                className="text-base font-bold text-[#E8912D]"
+                style={{ fontFamily: "Fraunces, serif" }}
+              >
+                À faire maintenant
               </h2>
               <div className="space-y-4">
-                {/* Plants without planted date */}
-                {trackingPlants
-                  .filter((p) => !p.hasBiologyData || p.plantedDate === null)
-                  .map((plant) => (
-                    <div key={plant.id} className="flex items-center gap-3 py-1">
-                      <span className="text-xl shrink-0">{plant.emoji}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-[#2A2622] truncate">
-                          {plant.name}
-                        </p>
-                        <p className="text-xs text-[#A9A29A] mt-0.5">
-                          Date de semis non enregistrée —{" "}
-                          <Link
-                            href="/garden"
-                            className="text-[#2D5A3D] hover:underline"
-                          >
-                            Ajouter
-                          </Link>
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-
-                {/* Active plants with tracking data */}
-                {activePlants.map((plant) => {
+                {actionNow.map((plant) => {
                   const progressPercent = plant.overallPercent ?? 0;
                   const segLabel = plant.currentSegment?.label ?? "En cours";
                   const phaseColor = plant.currentSegment?.color;
@@ -494,99 +515,98 @@ export function DashboardClient({
                   );
                 })}
 
-                {/* This week calendar rows not covered by active plants */}
-                {thisWeekRows.length > 0 && (
-                  <div className="space-y-3 pt-2 border-t border-[#F5F2EE]">
-                    {(() => {
-                      const grouped: Record<string, ThisWeekRow[]> = {};
-                      for (const { phase, row } of thisWeekRows) {
-                        if (!grouped[phase]) grouped[phase] = [];
-                        grouped[phase].push(row);
-                      }
-                      return phaseOrder.map((phase) => {
-                        const rows = grouped[phase];
-                        if (!rows || rows.length === 0) return null;
-                        const { emoji, label } = phaseConfig[phase];
-                        return (
-                          <div key={phase}>
-                            <p className="text-xs font-semibold text-[#3D3832] mb-1.5">
-                              {emoji} {label}
-                            </p>
-                            <ul className="space-y-1.5 pl-4">
-                              {rows.map((row) => {
-                                const repStatus = getRepiquageStatus(
-                                  row.plantedDate,
-                                  row.daysIndoorToRepiquage
-                                );
-                                const tipCtx: TipContext = {
-                                  name: row.name,
-                                  plantedDate: row.plantedDate,
-                                  daysIndoorToRepiquage: row.daysIndoorToRepiquage,
-                                  frostTolerance: row.frostTolerance,
-                                  spacingCm: row.spacingCm,
-                                  rowSpacingCm: row.rowSpacingCm,
-                                  germinationTempMin: row.calData.germinationTempMin,
-                                  germinationTempMax: row.calData.germinationTempMax,
-                                  depthMm: row.calData.depthMm,
-                                  sowingMethod: row.calData.sowingMethod,
-                                  heightCm: row.calData.heightCm,
-                                  daysToMaturityMin: row.calData.daysToMaturityMin,
-                                  daysToMaturityMax: row.calData.daysToMaturityMax,
-                                  sowingType: null,
-                                };
-                                const tip = generateTip(phase, tipCtx, repStatus);
-                                return (
-                                  <li key={row.id} className="text-sm text-[#5C5650]">
-                                    <Link
-                                      href={`/garden/${row.id}`}
-                                      className="font-semibold text-[#2D5A3D] hover:underline"
-                                    >
-                                      {row.name}
-                                    </Link>
-                                    <span className="block text-xs text-[#7D766E] mt-0.5">
-                                      {tip}
-                                    </span>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                )}
-
-                {activePlants.length === 0 && thisWeekRows.length === 0 && trackingPlants.every((p) => p.hasBiologyData && p.plantedDate !== null) && (
-                  <p className="text-sm text-[#7D766E]">
-                    Rien de prévu cette semaine! 🎉 Profitez du potager.
-                  </p>
-                )}
               </div>
             </section>
           )}
 
-          {/* BIENTÔT */}
-          {soonTransitions.length > 0 && (
-            <section className="bg-white rounded-xl border border-[#E8E4DE] border-l-4 border-l-[#3B8EA5] p-4 space-y-3">
+          {/* À FAIRE BIENTÔT — transition within 7 days */}
+          {actionSoon.length > 0 && (
+            <section className="bg-white rounded-xl border border-[#E8E4DE] border-l-4 border-l-[#D4A017] p-4 space-y-3">
               <h2
-                className="text-base font-bold text-[#3B8EA5]"
+                className="text-base font-bold text-[#D4A017]"
                 style={{ fontFamily: "Fraunces, serif" }}
               >
                 📅 Bientôt
               </h2>
               <ul className="space-y-2">
-                {soonTransitions.map((plant) => (
+                {actionSoon.map((plant) => (
                   <li key={plant.id} className="flex items-center justify-between gap-2">
                     <span className="text-sm text-[#3D3832]">
                       <span className="font-semibold text-[#2A2622]">{plant.emoji} {plant.name}</span>
+                      {plant.quantity > 1 && (
+                        <span className="text-[#A9A29A] font-normal"> x{plant.quantity}</span>
+                      )}
                     </span>
-                    <span className="text-xs text-[#3B8EA5] whitespace-nowrap">
+                    <span className="text-xs text-[#D4A017] whitespace-nowrap">
                       {plant.upcomingTransition!.label} dans {plant.upcomingTransition!.daysUntil} jour{plant.upcomingTransition!.daysUntil !== 1 ? "s" : ""}
                     </span>
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+
+          {/* EN CROISSANCE — passive monitoring */}
+          {growing.length > 0 && (
+            <section className="bg-white rounded-xl border border-[#E8E4DE] border-l-4 border-l-[#2D5A3D] p-4 space-y-3">
+              <h2
+                className="text-base font-bold text-[#2D5A3D]"
+                style={{ fontFamily: "Fraunces, serif" }}
+              >
+                En croissance
+              </h2>
+              <div className="space-y-3">
+                {growing.map((plant) => {
+                  const segLabel = plant.currentSegment?.label ?? "En cours";
+                  const segColor = plant.currentSegment?.color;
+                  const segPercent = plant.currentSegmentTotal > 0
+                    ? Math.round((plant.currentSegmentProgress / plant.currentSegmentTotal) * 100)
+                    : 0;
+                  const daysLeft = plant.currentSegmentTotal - plant.currentSegmentProgress;
+                  const nextLabel = plant.nextPhaseAction === "repiquage"
+                    ? "Repiquage"
+                    : plant.nextPhaseAction === "transplant"
+                    ? "Mise au potager"
+                    : null;
+
+                  return (
+                    <div key={plant.id} className="space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-lg shrink-0">{plant.emoji}</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-[#2A2622] truncate">
+                              {plant.name}
+                              {plant.quantity > 1 && (
+                                <span className="text-[#A9A29A] font-normal"> x{plant.quantity}</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-[#7D766E]">
+                              {segLabel}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-[#7D766E]">
+                            Jour {plant.currentSegmentProgress + 1} sur {plant.currentSegmentTotal}
+                          </p>
+                          {nextLabel && daysLeft > 0 && (
+                            <p className="text-xs text-[#A9A29A]">
+                              {nextLabel} dans {daysLeft}j
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <ProgressBar
+                        percent={segPercent}
+                        isComplete={false}
+                        isOverdue={false}
+                        color={segColor}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </section>
           )}
 
@@ -629,7 +649,7 @@ export function DashboardClient({
           )}
 
           {/* No tasks at all */}
-          {!hasAnyTasks && (
+          {!hasAnyContent && (
             <section className="bg-white rounded-xl border border-[#E8E4DE] p-6 text-center">
               <p className="text-sm text-[#7D766E]">
                 Rien de prévu cette semaine! 🎉 Profitez du potager.
