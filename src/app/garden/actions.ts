@@ -46,7 +46,8 @@ export async function addPlant(
   gardenId: number,
   plantId: number,
   quantity: number,
-  plantedDate?: string
+  plantedDate?: string,
+  sowingType?: "indoor" | "outdoor"
 ) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -73,6 +74,7 @@ export async function addPlant(
       plant_id: plantId,
       quantity,
       planted_date: plantedDate ?? null,
+      sowing_type: sowingType ?? null,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -161,7 +163,7 @@ export async function advancePhase(
     return { error: "Date de plantation requise" };
   }
 
-  if (targetPhase === "transplant" && !userPlant.repiquage_at) {
+  if (targetPhase === "transplant" && !userPlant.repiquage_at && userPlant.sowing_type !== "indoor") {
     return { error: "Le repiquage doit être fait avant la transplantation" };
   }
 
@@ -196,6 +198,7 @@ export async function advancePhase(
         repiquage_at: targetPhase === "repiquage" ? today : userPlant.repiquage_at,
         transplant_at: targetPhase === "transplant" ? today : userPlant.transplant_at,
         notes: userPlant.notes,
+        sowing_type: userPlant.sowing_type,
       })
       .returning({ id: user_plants.id });
 

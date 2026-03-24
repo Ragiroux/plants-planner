@@ -31,6 +31,7 @@ export interface PlantSeedData {
   daysIndoorToRepiquage: number | null;
   daysRepiquageToTransplant: number | null;
   daysTransplantToHarvest: number | null;
+  defaultIndoorToTransplant: number | null;
   zones: {
     zone_3_4: ZoneCalendar;
     zone_5_6: ZoneCalendar;
@@ -50,6 +51,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -105,6 +107,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 90,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 1,
@@ -160,6 +163,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 42,
     daysRepiquageToTransplant: 35,
     daysTransplantToHarvest: 65,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -215,6 +219,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 55,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -270,6 +275,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -325,6 +331,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 60,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -380,6 +387,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -435,6 +443,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 42,
     daysRepiquageToTransplant: 56,
     daysTransplantToHarvest: 100,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 1,
@@ -490,6 +499,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 56,
     daysTransplantToHarvest: 75,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -545,6 +555,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 70,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -600,6 +611,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 48,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -655,6 +667,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 60,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: 1,
@@ -710,6 +723,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 1,
@@ -765,6 +779,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 100,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -820,6 +835,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -875,6 +891,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 90,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 9,
@@ -930,6 +947,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 65,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 9,
@@ -985,6 +1003,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 52,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 9,
@@ -1040,6 +1059,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1095,6 +1115,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1150,6 +1171,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 50,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -1205,6 +1227,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 80,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -1260,6 +1283,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1315,6 +1339,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1370,6 +1395,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 45,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -1425,6 +1451,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1480,6 +1507,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1535,6 +1563,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 82,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 9,
@@ -1590,6 +1619,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1645,6 +1675,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 90,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -1700,6 +1731,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1755,6 +1787,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1810,6 +1843,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: 1,
@@ -1865,6 +1899,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -1920,6 +1955,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -1975,6 +2011,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 56,
     daysRepiquageToTransplant: 35,
     daysTransplantToHarvest: 80,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 1,
@@ -2030,6 +2067,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 110,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 1,
@@ -2085,6 +2123,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -2140,6 +2179,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -2195,6 +2235,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -2250,6 +2291,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -2305,6 +2347,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 1,
@@ -2360,6 +2403,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -2415,6 +2459,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -2470,6 +2515,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -2525,6 +2571,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 120,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -2580,6 +2627,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 21,
     daysTransplantToHarvest: 70,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -2635,6 +2683,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: 100,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -2690,6 +2739,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -2746,6 +2796,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -2801,6 +2852,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: 30,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -2856,6 +2908,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 21,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: 25,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 5,
@@ -2911,6 +2964,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: 35,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 4,
@@ -2966,6 +3020,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -3021,6 +3076,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -3076,6 +3132,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 42,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 2,
@@ -3131,6 +3188,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 14,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -3186,6 +3244,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -3241,6 +3300,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 42,
     daysRepiquageToTransplant: 21,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 2,
@@ -3296,6 +3356,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -3351,6 +3412,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: 45,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 4,
@@ -3406,6 +3468,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -3461,6 +3524,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 4,
@@ -3516,6 +3580,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: 30,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -3571,6 +3636,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: null,
     daysRepiquageToTransplant: null,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: 21,
     zones: {
       zone_3_4: {
         indoorSowStart: null,
@@ -3626,6 +3692,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 4,
@@ -3681,6 +3748,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,
@@ -3736,6 +3804,7 @@ export const plants: PlantSeedData[] = [
     daysIndoorToRepiquage: 28,
     daysRepiquageToTransplant: 14,
     daysTransplantToHarvest: null,
+    defaultIndoorToTransplant: null,
     zones: {
       zone_3_4: {
         indoorSowStart: 3,

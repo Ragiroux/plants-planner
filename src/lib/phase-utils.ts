@@ -21,6 +21,7 @@ export interface PlantActionRow {
   calendar: PlantCalendar | null;
   repiquageAt: string | null;
   transplantAt: string | null;
+  sowingType: "indoor" | "outdoor" | null;
 }
 
 export const phaseConfig: Record<Phase, { emoji: string; label: string }> = {

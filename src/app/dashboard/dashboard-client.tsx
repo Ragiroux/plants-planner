@@ -48,6 +48,7 @@ interface TrackingPlant {
   quantity: number;
   nextPhaseAction: "repiquage" | "transplant" | null;
   gardenActions: readonly string[] | null;
+  sowingType: "indoor" | "outdoor" | null;
 }
 
 interface MonPotagerPlant {
@@ -543,6 +544,7 @@ export function DashboardClient({
                             heightCm: row.calData.heightCm,
                             daysToMaturityMin: row.calData.daysToMaturityMin,
                             daysToMaturityMax: row.calData.daysToMaturityMax,
+                            sowingType: null,
                           };
                           const tip = generateTip(phase, tipCtx, repStatus);
                           return (

@@ -22,6 +22,8 @@ export const companionRelationshipEnum = pgEnum("companion_relationship", [
   "antagonistic",
 ]);
 
+export const sowingTypeEnum = pgEnum("sowing_type", ["indoor", "outdoor"]);
+
 export const stepTypeEnum = pgEnum("step_type", [
   "semis_interieur",
   "semis_exterieur",
@@ -112,6 +114,7 @@ export const plants = pgTable("plants", {
   days_indoor_to_repiquage: integer("days_indoor_to_repiquage"),
   days_repiquage_to_transplant: integer("days_repiquage_to_transplant"),
   days_transplant_to_harvest: integer("days_transplant_to_harvest"),
+  default_indoor_to_transplant: integer("default_indoor_to_transplant"),
 });
 
 export const plant_calendars = pgTable(
@@ -178,6 +181,7 @@ export const user_plants = pgTable(
       .references(() => plants.id, { onDelete: "cascade" }),
     quantity: integer("quantity").default(1).notNull(),
     planted_date: date("planted_date"),
+    sowing_type: sowingTypeEnum("sowing_type"),
     repiquage_at: date("repiquage_at"),
     transplant_at: date("transplant_at"),
     notes: text("notes"),

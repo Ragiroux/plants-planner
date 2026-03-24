@@ -127,6 +127,7 @@ describe("logStep ownership validation", () => {
       repiquage_at: null,
       transplant_at: null,
       notes: null,
+      sowing_type: null,
       created_at: new Date(),
     });
 

@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { plants, user_plants, gardens, companion_plants } from "@/lib/db/schema";
+import { plants, user_plants, gardens, companion_plants, plant_calendars } from "@/lib/db/schema";
 import { eq, inArray, or, and } from "drizzle-orm";
 import Link from "next/link";
 import { PlantSearchFilter } from "@/components/garden/plant-search-filter";
+import { getCurrentWeek } from "@/lib/calendar-utils";
 
 export default async function GardenAddPage() {
   const session = await auth();
@@ -22,6 +23,9 @@ export default async function GardenAddPage() {
 
   const primaryGarden = userGardens[0];
 
+  const zone = session.user.climate_zone ?? "zone_5_6";
+  const currentWeek = getCurrentWeek();
+
   const allPlants = await db
     .select({
       id: plants.id,
@@ -30,6 +34,7 @@ export default async function GardenAddPage() {
       row_spacing_cm: plants.row_spacing_cm,
       sun_exposure: plants.sun_exposure,
       frost_tolerance: plants.frost_tolerance,
+      default_indoor_to_transplant: plants.default_indoor_to_transplant,
     })
     .from(plants)
     .orderBy(plants.name);
@@ -41,6 +46,34 @@ export default async function GardenAddPage() {
 
   const gardenPlantIds = existingUserPlants.map((up) => up.plant_id);
   const allPlantIds = allPlants.map((p) => p.id);
+
+  const calendarRows = allPlantIds.length > 0
+    ? await db
+        .select({
+          plant_id: plant_calendars.plant_id,
+          outdoor_sow_start: plant_calendars.outdoor_sow_start,
+          outdoor_sow_end: plant_calendars.outdoor_sow_end,
+          indoor_sow_start: plant_calendars.indoor_sow_start,
+          indoor_sow_end: plant_calendars.indoor_sow_end,
+          days_to_maturity_min: plant_calendars.days_to_maturity_min,
+          days_to_maturity_max: plant_calendars.days_to_maturity_max,
+        })
+        .from(plant_calendars)
+        .where(
+          and(
+            inArray(plant_calendars.plant_id, allPlantIds),
+            eq(plant_calendars.zone, zone)
+          )
+        )
+    : [];
+
+  const calendarData = new Map(calendarRows.map((c) => [c.plant_id, c]));
+
+  const indoorDurations = new Map(
+    allPlants
+      .filter((p) => p.default_indoor_to_transplant !== null)
+      .map((p) => [p.id, p.default_indoor_to_transplant as number])
+  );
 
   let companionRows: Array<{
     candidatePlantId: number;
@@ -122,6 +155,10 @@ export default async function GardenAddPage() {
         gardenId={primaryGarden.id}
         gardenPlantIds={gardenPlantIds}
         companionData={companionRows}
+        calendarData={Object.fromEntries(calendarData)}
+        currentWeek={currentWeek}
+        zone={zone}
+        indoorDurations={Object.fromEntries(indoorDurations)}
       />
     </div>
   );

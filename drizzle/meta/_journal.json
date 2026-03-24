@@ -15,6 +15,13 @@
       "when": 1774296869139,
       "tag": "0001_dear_sauron",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774365529022,
+      "tag": "0002_illegal_mercury",
+      "breakpoints": true
     }
   ]
 }

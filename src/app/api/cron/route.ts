@@ -14,11 +14,14 @@ import { getCurrentWeek, getWeekLabel } from "@/lib/calendar-utils";
 import { callAI, getAIProvider } from "@/lib/ai";
 import { getSmartActivePhases, getRepiquageStatus } from "@/lib/phase-utils";
 import type { Phase, PlantActionRow } from "@/lib/phase-utils";
+import { getEffectiveLifecycleDurations, getPhaseTransitionDays } from "@/lib/lifecycle-calc";
 
 interface PlantWithCalendar {
   name: string;
   userPlantId: number;
   plantedDate: string | null;
+  sowingType: "indoor" | "outdoor" | null;
+  defaultIndoorToTransplant: number | null;
   daysIndoorToRepiquage: number | null;
   daysRepiquageToTransplant: number | null;
   daysTransplantToHarvest: number | null;
@@ -59,6 +62,7 @@ function plantWithCalendarToActionRow(plant: PlantWithCalendar): PlantActionRow 
     rowSpacingCm: plant.row_spacing_cm,
     repiquageAt: null,
     transplantAt: null,
+    sowingType: plant.sowingType,
     calendar: {
       indoor_sow_start: plant.indoor_sow_start,
       indoor_sow_end: plant.indoor_sow_end,
@@ -244,6 +248,61 @@ function generateTips(plant: PlantWithCalendar, week: number): string[] {
   return tips;
 }
 
+function generatePhaseTransitionTips(plant: PlantWithCalendar): string[] {
+  if (!plant.plantedDate || plant.sowingType === null) return [];
+
+  const durations = getEffectiveLifecycleDurations(
+    plant.daysIndoorToRepiquage,
+    plant.daysRepiquageToTransplant,
+    plant.daysTransplantToHarvest,
+    plant.sowingType,
+    {
+      days_to_maturity_min: plant.days_to_maturity_min,
+      days_to_maturity_max: plant.days_to_maturity_max,
+      indoor_sow_start: plant.indoor_sow_start,
+      indoor_sow_end: plant.indoor_sow_end,
+      outdoor_sow_start: plant.outdoor_sow_start,
+      outdoor_sow_end: plant.outdoor_sow_end,
+      transplant_start: plant.transplant_start,
+      transplant_end: plant.transplant_end,
+      garden_transplant_start: plant.garden_transplant_start,
+      garden_transplant_end: plant.garden_transplant_end,
+      harvest_start: plant.harvest_start,
+      harvest_end: plant.harvest_end,
+      depth_mm: plant.depth_mm,
+      germination_temp_min: plant.germination_temp_min,
+      germination_temp_max: plant.germination_temp_max,
+      sowing_method: plant.sowing_method,
+      luminosity: plant.luminosity,
+      height_cm: plant.height_cm,
+    },
+    plant.defaultIndoorToTransplant
+  );
+
+  const transitions = getPhaseTransitionDays(durations);
+  const DAY = 24 * 60 * 60 * 1000;
+  const plantedMs = new Date(plant.plantedDate + "T00:00:00").getTime();
+  const todayMs = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00").getTime();
+  const daysSincePlanted = Math.floor((todayMs - plantedMs) / DAY);
+
+  const tips: string[] = [];
+
+  if (transitions.acclimationStart !== null && daysSincePlanted === transitions.acclimationStart) {
+    tips.push(`🌿 *${plant.name}* — Prêt pour l'acclimatation! Commence à sortir les plants 2h par jour.`);
+  }
+
+  if (transitions.transplantReady !== null) {
+    if (daysSincePlanted === transitions.transplantReady) {
+      tips.push(`🏡 *${plant.name}* — Acclimatation terminée — prêt pour le potager!`);
+    } else if (daysSincePlanted > transitions.transplantReady + 3) {
+      const retard = daysSincePlanted - transitions.transplantReady;
+      tips.push(`⚠️ *${plant.name}* — En retard de ${retard} jour${retard !== 1 ? "s" : ""} pour la transplantation.`);
+    }
+  }
+
+  return tips;
+}
+
 async function fetchWeatherForSlack(
   lat: number,
   lon: number,
@@ -339,6 +398,7 @@ export async function POST(request: NextRequest) {
       .select({
         userPlantId: user_plants.id,
         plantedDate: user_plants.planted_date,
+        sowingType: user_plants.sowing_type,
         plantName: plants.name,
         plantId: plants.id,
         spacingCm: plants.spacing_cm,
@@ -347,6 +407,7 @@ export async function POST(request: NextRequest) {
         daysIndoorToRepiquage: plants.days_indoor_to_repiquage,
         daysRepiquageToTransplant: plants.days_repiquage_to_transplant,
         daysTransplantToHarvest: plants.days_transplant_to_harvest,
+        defaultIndoorToTransplant: plants.default_indoor_to_transplant,
       })
       .from(user_plants)
       .innerJoin(plants, eq(user_plants.plant_id, plants.id))
@@ -368,6 +429,8 @@ export async function POST(request: NextRequest) {
         name: row.plantName,
         userPlantId: row.userPlantId,
         plantedDate: row.plantedDate ?? null,
+        sowingType: row.sowingType ?? null,
+        defaultIndoorToTransplant: row.defaultIndoorToTransplant ?? null,
         daysIndoorToRepiquage: row.daysIndoorToRepiquage ?? null,
         daysRepiquageToTransplant: row.daysRepiquageToTransplant ?? null,
         daysTransplantToHarvest: row.daysTransplantToHarvest ?? null,
@@ -400,6 +463,8 @@ export async function POST(request: NextRequest) {
     for (const plant of plantsWithCalendar) {
       const tips = generateTips(plant, currentWeek);
       allTips.push(...tips);
+      const transitionTips = generatePhaseTransitionTips(plant);
+      allTips.push(...transitionTips);
     }
 
     // Overdue steps

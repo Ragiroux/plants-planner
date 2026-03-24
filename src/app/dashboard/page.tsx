@@ -30,6 +30,7 @@ import {
 } from "@/lib/phase-utils";
 import type { PlantActionRow } from "@/lib/phase-utils";
 import { generateTip, type TipContext } from "@/lib/tip-templates";
+import { getEffectiveLifecycleDurations } from "@/lib/lifecycle-calc";
 import { DashboardClient } from "./dashboard-client";
 
 export default async function DashboardPage() {
@@ -176,6 +177,8 @@ export default async function DashboardPage() {
       calendar: cal,
       repiquageAt: row.userPlant.repiquage_at ?? null,
       transplantAt: row.userPlant.transplant_at ?? null,
+      sowingType: row.userPlant.sowing_type ?? null,
+      defaultIndoorToTransplant: row.plant.default_indoor_to_transplant ?? null,
     };
   });
 
@@ -275,9 +278,20 @@ export default async function DashboardPage() {
       const plantedMs = new Date(plantedDate + "T00:00:00").getTime();
       const daysSincePlanted = Math.floor((todayMs - plantedMs) / DAY);
 
-      const d1 = row.daysIndoorToRepiquage;
-      const d2 = row.daysRepiquageToTransplant;
-      const d3 = row.daysTransplantToHarvest;
+      const sowingType = row.sowingType ?? null;
+      const rowExt = row as PlantActionRow & { defaultIndoorToTransplant?: number | null };
+      const defaultIndoorToTransplant = rowExt.defaultIndoorToTransplant ?? null;
+
+      const durations = getEffectiveLifecycleDurations(
+        row.daysIndoorToRepiquage,
+        row.daysRepiquageToTransplant,
+        row.daysTransplantToHarvest,
+        sowingType,
+        cal,
+        defaultIndoorToTransplant
+      );
+
+      const { d1, d1Accl, d2, d3 } = durations;
 
       type PhaseSegment = {
         label: string;
@@ -292,16 +306,27 @@ export default async function DashboardPage() {
       let cursorMs = plantedMs;
 
       if (d1 !== null) {
-        const endMs = row.repiquageAt
+        const indoorEndMs = row.repiquageAt
           ? new Date(row.repiquageAt + "T00:00:00").getTime()
           : cursorMs + d1 * DAY;
         segments.push({
           label: "Semis intérieur",
           color: "#E8912D",
           startDay: toDay(cursorMs),
-          endDay: toDay(endMs),
+          endDay: toDay(indoorEndMs),
         });
-        cursorMs = endMs;
+        cursorMs = indoorEndMs;
+
+        if (d1Accl !== null) {
+          const acclEndMs = cursorMs + d1Accl * DAY;
+          segments.push({
+            label: "Acclimatation",
+            color: "#3B8EA5",
+            startDay: toDay(cursorMs),
+            endDay: toDay(acclEndMs),
+          });
+          cursorMs = acclEndMs;
+        }
       }
       if (d2 !== null) {
         const endMs = row.transplantAt
@@ -358,7 +383,14 @@ export default async function DashboardPage() {
       let nextPhaseAction: "repiquage" | "transplant" | null = null;
       if (!isComplete && currentSegment) {
         if (currentSegment.label === "Semis intérieur" && !row.repiquageAt) {
-          nextPhaseAction = "repiquage";
+          if (sowingType === "indoor" && d2 === null) {
+            // indoor direct-sow: no repiquage, advance straight to transplant after acclimatation
+            nextPhaseAction = null;
+          } else {
+            nextPhaseAction = "repiquage";
+          }
+        } else if (currentSegment.label === "Acclimatation") {
+          nextPhaseAction = "transplant";
         } else if (currentSegment.label === "Repiquage" && !row.transplantAt) {
           nextPhaseAction = "transplant";
         }
@@ -394,6 +426,7 @@ export default async function DashboardPage() {
         quantity,
         nextPhaseAction,
         gardenActions,
+        sowingType,
       };
     }
 
@@ -422,6 +455,7 @@ export default async function DashboardPage() {
       quantity,
       nextPhaseAction: null,
       gardenActions: null,
+      sowingType: row.sowingType ?? null,
     };
   });
 

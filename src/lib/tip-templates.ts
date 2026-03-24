@@ -14,6 +14,7 @@ export interface TipContext {
   heightCm: number | null;
   daysToMaturityMin: number | null;
   daysToMaturityMax: number | null;
+  sowingType: "indoor" | "outdoor" | null;
 }
 
 const sowingMethodLabels: Record<string, string> = {
@@ -30,6 +31,21 @@ function pluriel(n: number): string {
 function indoorSowTip(ctx: TipContext, status: RepiquageStatus): string {
   const daysSincePlanted =
     status.status !== "no_data" ? status.daysSincePlanted : null;
+
+  const isIndoorDirectSow = ctx.sowingType === "indoor" && ctx.daysIndoorToRepiquage === null;
+
+  if (isIndoorDirectSow) {
+    if (daysSincePlanted !== null && daysSincePlanted <= 3) {
+      if (ctx.germinationTempMin && ctx.germinationTempMax) {
+        return `Maintenez ${ctx.germinationTempMin}–${ctx.germinationTempMax}°C pour une germination optimale`;
+      }
+      return "Gardez un bon éclairage — ces semis ont besoin de lumière directe";
+    }
+    if (daysSincePlanted !== null && daysSincePlanted > 3) {
+      return "Gardez un bon éclairage — ces semis ont besoin de lumière directe";
+    }
+    return "Semis intérieur en cours";
+  }
 
   if (status.status === "soon") {
     return "Repiquage bientôt! Préparez des pots plus grands";
