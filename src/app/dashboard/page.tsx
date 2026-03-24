@@ -18,7 +18,7 @@ import {
   getFrenchDate,
 } from "@/lib/calendar-utils";
 import { fromMeters, unitSquaredLabel, type UnitPreference } from "@/lib/units";
-import { getPlantEmoji, getStatusLabel } from "@/lib/plant-utils";
+import { getPlantEmoji } from "@/lib/plant-utils";
 import {
   getPhaseReadiness,
   getRepiquageStatus,
@@ -402,6 +402,16 @@ export default async function DashboardPage() {
           ? (["arrosage", "fertilisation", "entretien"] as const)
           : null;
 
+      let upcomingTransition: { label: string; daysUntil: number } | null = null;
+      if (nextPhaseAction && currentSegment) {
+        const daysRemaining = currentSegmentTotal - currentSegmentProgress;
+        if (daysRemaining <= 7 && daysRemaining >= 0) {
+          const actionLabel =
+            nextPhaseAction === "repiquage" ? "Repiquage" : "Mise au potager";
+          upcomingTransition = { label: actionLabel, daysUntil: daysRemaining };
+        }
+      }
+
       return {
         id: row.id,
         plantId: row.plantId,
@@ -428,6 +438,7 @@ export default async function DashboardPage() {
         nextPhaseAction,
         gardenActions,
         sowingType,
+        upcomingTransition,
       };
     }
 
@@ -457,37 +468,7 @@ export default async function DashboardPage() {
       nextPhaseAction: null,
       gardenActions: null,
       sowingType: row.sowingType ?? null,
-    };
-  });
-
-  const calendarTimelinePlants = userPlantRows.map((row) => ({
-    id: row.userPlant.id,
-    name: row.plant.name,
-    quantity: row.userPlant.quantity,
-    plantedDate: row.userPlant.planted_date ?? null,
-    daysIndoorToRepiquage: row.plant.days_indoor_to_repiquage ?? null,
-    daysRepiquageToTransplant: row.plant.days_repiquage_to_transplant ?? null,
-    daysTransplantToHarvest: row.plant.days_transplant_to_harvest ?? null,
-    calendar: calendarMap.get(row.plant.id) ?? null,
-  }));
-
-  const monPotagerPlants = userPlantRows.map(({ userPlant, plant }) => {
-    const cal = calendarMap.get(plant.id) ?? null;
-    const status = getStatusLabel(cal, currentWeek);
-    const emoji = getPlantEmoji(plant.name);
-    return {
-      userPlantId: userPlant.id,
-      plantId: plant.id,
-      name: plant.name,
-      emoji,
-      status,
-      calendar: cal,
-      spacingCm: plant.spacing_cm ?? null,
-      rowSpacingCm: plant.row_spacing_cm ?? null,
-      frostTolerance: plant.frost_tolerance ?? null,
-      daysIndoorToRepiquage: plant.days_indoor_to_repiquage ?? null,
-      daysRepiquageToTransplant: plant.days_repiquage_to_transplant ?? null,
-      daysTransplantToHarvest: plant.days_transplant_to_harvest ?? null,
+      upcomingTransition: null,
     };
   });
 
@@ -558,14 +539,12 @@ export default async function DashboardPage() {
       weeksUntilSeason={weeksUntilSeason}
       overdueSteps={overdueSteps}
       trackingPlants={trackingPlants}
-      monPotagerPlants={monPotagerPlants}
       spacePercent={spacePercent}
       usedAreaM2={usedAreaM2}
       totalAreaM2={totalAreaM2}
       unitPref={unitPref}
       areaUnitLabel={areaUnitLabel}
       primaryGardenId={primaryGarden?.id ?? null}
-      calendarTimelinePlants={calendarTimelinePlants}
       currentWeek={currentWeek}
       hasNextWeekTasks={hasNextWeekTasks}
       thisWeekByPhase={thisWeekByPhaseSerialized}
