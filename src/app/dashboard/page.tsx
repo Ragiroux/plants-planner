@@ -288,7 +288,8 @@ export default async function DashboardPage() {
         row.daysTransplantToHarvest,
         sowingType,
         cal,
-        defaultIndoorToTransplant
+        defaultIndoorToTransplant,
+        plantedDate
       );
 
       const { d1, d1Accl, d2, d3 } = durations;

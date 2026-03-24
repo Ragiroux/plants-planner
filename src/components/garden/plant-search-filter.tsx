@@ -239,16 +239,17 @@ export function PlantSearchFilter({
 
     void plant;
 
+    const dateStr = plantedDates[plantId] ?? todayISO;
+
     const durations = getEffectiveLifecycleDurations(
       d1Raw,
       d2Raw,
       d3Raw,
       sowingType,
       calForLifecycle,
-      defaultIndoorDays
+      defaultIndoorDays,
+      dateStr
     );
-
-    const dateStr = plantedDates[plantId] ?? todayISO;
     const totalDaysToTransplant =
       (durations.d1 ?? 0) + (durations.d1Accl ?? 0) + (durations.d2 ?? 0);
 

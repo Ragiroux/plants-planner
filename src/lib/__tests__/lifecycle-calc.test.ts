@@ -43,7 +43,7 @@ describe("getEffectiveLifecycleDurations", () => {
   });
 
   // Cas 2: Direct-sow started indoor
-  it("synthesizes indoor lifecycle for direct-sow started indoor", () => {
+  it("synthesizes indoor lifecycle for direct-sow started indoor (no plantedDate)", () => {
     const cal = makeCal({ days_to_maturity_min: 55 });
     const result = getEffectiveLifecycleDurations(null, null, null, "indoor", cal, 21);
     expect(result).toEqual({
@@ -52,6 +52,30 @@ describe("getEffectiveLifecycleDurations", () => {
       d2: null,
       d3: 34, // max(55 - 21, 14)
     });
+  });
+
+  it("uses dynamic indoor duration based on outdoor_sow_start when planted early", () => {
+    // outdoor_sow_start = 12 (May, week 12) → weekToDate(12) ≈ May 1
+    // planted March 24 → ~38 days until May 1
+    // minIndoorDays = 21, but 38 > 21 so use 38
+    const cal = makeCal({ days_to_maturity_min: 55, outdoor_sow_start: 12 });
+    const result = getEffectiveLifecycleDurations(null, null, null, "indoor", cal, 21, "2026-03-24");
+    // d1 = 38 - 7 = 31, d1Accl = 7, d3 = max(55 - 38, 14)
+    expect(result.d1Accl).toBe(7);
+    expect(result.d2).toBeNull();
+    const totalIndoor = (result.d1 ?? 0) + (result.d1Accl ?? 0);
+    // Should be ~38 days (exact depends on weekToDate), definitely more than 21
+    expect(totalIndoor).toBeGreaterThan(21);
+    expect(totalIndoor).toBeLessThan(50);
+  });
+
+  it("uses minimum indoor days when planted close to outdoor window", () => {
+    // outdoor_sow_start = 12, planted late April → only ~7 days until May
+    // minIndoorDays = 21 > 7, so use 21
+    const cal = makeCal({ days_to_maturity_min: 55, outdoor_sow_start: 12 });
+    const result = getEffectiveLifecycleDurations(null, null, null, "indoor", cal, 21, "2026-04-25");
+    expect(result.d1).toBe(14); // 21 - 7
+    expect(result.d1Accl).toBe(7);
   });
 
   it("uses DEFAULT_INDOOR_DAYS when defaultIndoorDays is null", () => {

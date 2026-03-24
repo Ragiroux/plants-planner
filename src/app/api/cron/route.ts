@@ -276,7 +276,8 @@ function generatePhaseTransitionTips(plant: PlantWithCalendar): string[] {
       luminosity: plant.luminosity,
       height_cm: plant.height_cm,
     },
-    plant.defaultIndoorToTransplant
+    plant.defaultIndoorToTransplant,
+    plant.plantedDate
   );
 
   const transitions = getPhaseTransitionDays(durations);
