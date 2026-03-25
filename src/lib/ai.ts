@@ -18,7 +18,7 @@ export async function callAI(options: {
   userMessage: string;
   maxTokens?: number;
 }): Promise<AIResponse> {
-  const { systemPrompt, userMessage, maxTokens = 1000 } = options;
+  const { systemPrompt, userMessage, maxTokens = 4000 } = options;
 
   if (process.env.GEMINI_API_KEY) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);

@@ -253,7 +253,7 @@ IMPORTANT: Réponds en 3-5 phrases MAXIMUM. Sois direct et pratique. Pas de list
     const aiResult = await callAI({
       systemPrompt,
       userMessage,
-      maxTokens: 500,
+      maxTokens: 4000,
     });
     assistantResponse = aiResult.text;
   } catch {
