@@ -72,9 +72,23 @@ const CALENDAR_PHASES = [
 
 const WEEK_MIN = 1;
 const WEEK_MAX = 44;
+const WEEK_SPAN = WEEK_MAX - WEEK_MIN;
+
+const MONTHS = [
+  { name: "Fév", startWeek: 1 },
+  { name: "Mar", startWeek: 5 },
+  { name: "Avr", startWeek: 9 },
+  { name: "Mai", startWeek: 13 },
+  { name: "Juin", startWeek: 17 },
+  { name: "Juil", startWeek: 21 },
+  { name: "Août", startWeek: 26 },
+  { name: "Sep", startWeek: 30 },
+  { name: "Oct", startWeek: 35 },
+  { name: "Nov", startWeek: 39 },
+];
 
 function weekToPercent(week: number): number {
-  return ((week - WEEK_MIN) / (WEEK_MAX - WEEK_MIN)) * 100;
+  return ((week - WEEK_MIN) / WEEK_SPAN) * 100;
 }
 
 export default async function PlantDetailPage({
@@ -464,7 +478,44 @@ export default async function PlantDetailPage({
                 Aucune donnée de calendrier disponible.
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-1">
+                <div className="relative h-5">
+                  {MONTHS.map((month) => (
+                    <div
+                      key={month.name}
+                      className="absolute top-0 h-full flex items-center"
+                      style={{ left: `${weekToPercent(month.startWeek)}%` }}
+                    >
+                      <span className="text-xs text-[#A9A29A] font-medium">
+                        {month.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="relative h-3">
+                  {MONTHS.map((month, i) => {
+                    const nextStart = MONTHS[i + 1]?.startWeek ?? WEEK_MAX;
+                    const span = nextStart - month.startWeek;
+                    const w = span / 4;
+                    return [1, 2, 3, 4].map((n) => {
+                      const ws = month.startWeek + (n - 1) * w;
+                      return (
+                        <div
+                          key={`${month.name}-w${n}`}
+                          className="absolute top-0 h-full flex items-center"
+                          style={{
+                            left: `${weekToPercent(ws)}%`,
+                            borderLeft: n > 1 ? "1px solid #F5F2EE" : undefined,
+                          }}
+                        >
+                          <span className="pl-0.5" style={{ fontSize: "9px", color: "#A9A29A" }}>
+                            {n}
+                          </span>
+                        </div>
+                      );
+                    });
+                  })}
+                </div>
                 <div className="relative h-4 bg-[#F5F2EE] rounded-full overflow-hidden">
                   {CALENDAR_PHASES.map((phase) => {
                     const start = calendarRecord?.[phase.startField] as number | null;
