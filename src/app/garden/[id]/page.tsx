@@ -14,10 +14,10 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentWeek } from "@/lib/calendar-utils";
 import { removePlant, updateVariety, createVariety } from "../actions";
-import { logStep } from "./actions";
 import { computeNextPhaseAction } from "@/lib/phase-utils";
 import { getEffectiveLifecycleDurations } from "@/lib/lifecycle-calc";
-import { AdvancePhaseCard } from "@/components/garden/advance-phase-card";
+import { LogStepCard } from "@/components/garden/log-step-card";
+import { stepLabels } from "@/lib/step-utils";
 
 const sunLabels: Record<string, string> = {
   soleil: "Plein soleil",
@@ -31,29 +31,6 @@ const frostLabels: Record<string, string> = {
   tender: "Sensible au gel",
 };
 
-const stepTypeLabels: Record<string, string> = {
-  semis_interieur: "🌱 Semis intérieur",
-  semis_exterieur: "🌿 Semis extérieur",
-  germination: "🌿 Germé",
-  repiquage: "🪴 Repiquage",
-  transplantation: "🏡 Transplantation",
-  entretien: "🔧 Entretien",
-  arrosage: "💧 Arrosage",
-  fertilisation: "🧪 Fertilisation",
-  recolte: "🍅 Récolte",
-};
-
-const STEP_TYPE_OPTIONS = [
-  "semis_interieur",
-  "semis_exterieur",
-  "germination",
-  "repiquage",
-  "transplantation",
-  "entretien",
-  "arrosage",
-  "fertilisation",
-  "recolte",
-] as const;
 
 const CALENDAR_PHASES = [
   {
@@ -425,14 +402,6 @@ export default async function PlantDetailPage({
         </CardContent>
       </Card>
 
-      {nextPhaseAction && (
-        <AdvancePhaseCard
-          userPlantId={userPlantId}
-          quantity={userPlant.quantity}
-          nextPhaseAction={nextPhaseAction}
-        />
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-[#E8E4DE]">
           <CardHeader className="pb-3">
@@ -548,73 +517,11 @@ export default async function PlantDetailPage({
         </Card>
       </div>
 
-      <Card className="border-[#E8E4DE]">
-        <CardHeader className="pb-3">
-          <CardTitle
-            className="text-base text-[#2A2622]"
-            style={{ fontFamily: "Fraunces, serif" }}
-          >
-            Enregistrer une étape
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form
-            action={async (formData: FormData) => {
-              "use server";
-              const stepType = formData.get("step_type") as string;
-              const notes = (formData.get("notes") as string) || undefined;
-              await logStep(
-                userPlantId,
-                stepType as Parameters<typeof logStep>[1],
-                notes
-              );
-            }}
-            className="space-y-3"
-          >
-            <div>
-              <label
-                htmlFor="step_type"
-                className="block text-sm font-medium text-[#3D3832] mb-1"
-              >
-                Type d&apos;étape
-              </label>
-              <select
-                id="step_type"
-                name="step_type"
-                required
-                className="w-full px-3 py-2 border border-[#E8E4DE] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A3D] bg-white"
-              >
-                {STEP_TYPE_OPTIONS.map((type) => (
-                  <option key={type} value={type}>
-                    {stepTypeLabels[type]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="notes"
-                className="block text-sm font-medium text-[#3D3832] mb-1"
-              >
-                Notes (optionnel)
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows={2}
-                placeholder="Observations, conditions..."
-                className="w-full px-3 py-2 border border-[#E8E4DE] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A3D] bg-white resize-none"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium bg-[#2D5A3D] hover:bg-[#3D7A52] text-white rounded-lg transition-colors"
-            >
-              Enregistrer
-            </button>
-          </form>
-        </CardContent>
-      </Card>
+      <LogStepCard
+        userPlantId={userPlantId}
+        quantity={userPlant.quantity}
+        nextPhaseAction={nextPhaseAction}
+      />
 
       {steps.length > 0 && (
         <Card className="border-[#E8E4DE]">
@@ -640,7 +547,7 @@ export default async function PlantDetailPage({
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#3D3832]">
-                        {stepTypeLabels[step.step_type] ?? step.step_type}
+                        {stepLabels[step.step_type as keyof typeof stepLabels] ?? step.step_type}
                       </p>
                       {step.notes && (
                         <p className="text-xs text-[#7D766E] mt-0.5 truncate">

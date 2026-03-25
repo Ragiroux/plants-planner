@@ -152,7 +152,8 @@ export async function updatePlantQuantity(
 export async function advancePhase(
   userPlantId: number,
   targetPhase: "repiquage" | "transplant",
-  quantity?: number
+  quantity?: number,
+  notes?: string
 ) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -221,6 +222,7 @@ export async function advancePhase(
       user_plant_id: newRecord.id,
       step_type: stepType as "repiquage" | "transplantation",
       completed_at: new Date(),
+      notes: notes ?? null,
     });
   } else {
     // Advance all: update in place
@@ -238,6 +240,7 @@ export async function advancePhase(
       user_plant_id: userPlantId,
       step_type: stepType as "repiquage" | "transplantation",
       completed_at: new Date(),
+      notes: notes ?? null,
     });
   }
 

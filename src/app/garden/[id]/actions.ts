@@ -7,12 +7,22 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { computeNextActionDate, stepObservationContent, type StepType } from "@/lib/step-utils";
 import { getCurrentWeek } from "@/lib/calendar-utils";
+import { advancePhase } from "@/app/garden/actions";
 
 export async function logStep(
   userPlantId: number,
   stepType: StepType,
-  notes?: string
+  options?: { notes?: string; quantity?: number }
 ): Promise<{ error?: string }> {
+  const notes = options?.notes;
+  const quantity = options?.quantity;
+
+  // For repiquage/transplantation, delegate to advancePhase (handles lot splitting)
+  if (stepType === "repiquage" || stepType === "transplantation") {
+    const targetPhase = stepType === "repiquage" ? "repiquage" : "transplant";
+    return (await advancePhase(userPlantId, targetPhase, quantity, notes)) ?? {};
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return { error: "Non authentifié" };
@@ -42,11 +52,16 @@ export async function logStep(
 
   const next_action_date = computeNextActionDate(stepType, plant);
 
+  const stepNotes =
+    quantity && quantity < userPlant.quantity
+      ? [notes, `${quantity} sur ${userPlant.quantity} plants`].filter(Boolean).join(" — ")
+      : (notes ?? null);
+
   await db.insert(plant_steps).values({
     user_plant_id: userPlantId,
     step_type: stepType,
     completed_at: new Date(),
-    notes: notes ?? null,
+    notes: stepNotes,
     next_action_date,
   });
 
@@ -59,6 +74,7 @@ export async function logStep(
   });
 
   revalidatePath(`/garden/${userPlantId}`);
+  revalidatePath("/garden");
   revalidatePath("/dashboard");
   revalidatePath("/journal");
 

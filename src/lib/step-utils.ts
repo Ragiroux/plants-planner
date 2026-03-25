@@ -54,7 +54,19 @@ export function computeNextActionDate(
   return next.toISOString().slice(0, 10);
 }
 
-const stepLabels: Record<StepType, string> = {
+export const STEP_TYPE_OPTIONS: StepType[] = [
+  "semis_interieur",
+  "semis_exterieur",
+  "germination",
+  "repiquage",
+  "transplantation",
+  "entretien",
+  "arrosage",
+  "fertilisation",
+  "recolte",
+];
+
+export const stepLabels: Record<StepType, string> = {
   arrosage: "💧 Arrosage",
   fertilisation: "🌿 Fertilisation",
   entretien: "🔧 Entretien",
