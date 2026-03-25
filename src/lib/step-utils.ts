@@ -68,7 +68,9 @@ const stepLabels: Record<StepType, string> = {
 
 export function stepObservationContent(
   stepType: StepType,
-  plantName: string
+  plantName: string,
+  varietyName?: string
 ): string {
-  return `${stepLabels[stepType]} — ${plantName}`;
+  const name = varietyName ? `${plantName} (${varietyName})` : plantName;
+  return `${stepLabels[stepType]} — ${name}`;
 }

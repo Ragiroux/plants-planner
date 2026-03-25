@@ -7,13 +7,17 @@ import {
   plant_calendars,
   plant_steps,
   observations,
+  varieties,
 } from "@/lib/db/schema";
 import { eq, and, desc, lt, gte, lte } from "drizzle-orm";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentWeek } from "@/lib/calendar-utils";
-import { removePlant } from "../actions";
+import { removePlant, updateVariety, createVariety } from "../actions";
 import { logStep } from "./actions";
+import { computeNextPhaseAction } from "@/lib/phase-utils";
+import { getEffectiveLifecycleDurations } from "@/lib/lifecycle-calc";
+import { AdvancePhaseCard } from "@/components/garden/advance-phase-card";
 
 const sunLabels: Record<string, string> = {
   soleil: "Plein soleil",
@@ -135,6 +139,17 @@ export default async function PlantDetailPage({
       and(eq(pc.plant_id, plant.id), eq(pc.zone, zone)),
   });
 
+  const variety = userPlant.variety_id
+    ? await db.query.varieties.findFirst({
+        where: (v, { eq }) => eq(v.id, userPlant.variety_id!),
+      })
+    : null;
+
+  const plantVarieties = await db
+    .select({ id: varieties.id, name: varieties.name })
+    .from(varieties)
+    .where(eq(varieties.plant_id, plant.id));
+
   const steps = await db
     .select()
     .from(plant_steps)
@@ -175,6 +190,104 @@ export default async function PlantDetailPage({
 
   const calendarRecord = calendar as Record<string, number | null | string> | null;
 
+  // Compute next phase action
+  let nextPhaseAction: "repiquage" | "transplant" | null = null;
+  if (userPlant.planted_date) {
+    const DAY = 24 * 60 * 60 * 1000;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayMs = new Date(todayStr + "T00:00:00").getTime();
+    const plantedMs = new Date(userPlant.planted_date + "T00:00:00").getTime();
+    const daysSincePlanted = Math.floor((todayMs - plantedMs) / DAY);
+
+    const durations = getEffectiveLifecycleDurations(
+      plant.days_indoor_to_repiquage,
+      plant.days_repiquage_to_transplant,
+      plant.days_transplant_to_harvest,
+      userPlant.sowing_type ?? null,
+      calendar ?? null,
+      plant.default_indoor_to_transplant ?? null,
+      userPlant.planted_date
+    );
+
+    const { d1, d1Accl, d2, d3 } = durations;
+
+    type PhaseSegment = {
+      label: string;
+      startDay: number;
+      endDay: number;
+    };
+
+    const toDay = (ms: number) => Math.floor((ms - plantedMs) / DAY);
+    const segments: PhaseSegment[] = [];
+    let cursorMs = plantedMs;
+
+    if (d1 !== null) {
+      const indoorEndMs = userPlant.repiquage_at
+        ? new Date(userPlant.repiquage_at + "T00:00:00").getTime()
+        : cursorMs + d1 * DAY;
+      segments.push({
+        label: "Semis intérieur",
+        startDay: toDay(cursorMs),
+        endDay: toDay(indoorEndMs),
+      });
+      cursorMs = indoorEndMs;
+
+      if (d1Accl !== null) {
+        const acclEndMs = cursorMs + d1Accl * DAY;
+        segments.push({
+          label: "Acclimatation",
+          startDay: toDay(cursorMs),
+          endDay: toDay(acclEndMs),
+        });
+        cursorMs = acclEndMs;
+      }
+    }
+    if (d2 !== null) {
+      const endMs = userPlant.transplant_at
+        ? new Date(userPlant.transplant_at + "T00:00:00").getTime()
+        : cursorMs + d2 * DAY;
+      segments.push({
+        label: "Repiquage",
+        startDay: toDay(cursorMs),
+        endDay: toDay(endMs),
+      });
+      cursorMs = endMs;
+    }
+    if (d3 !== null) {
+      segments.push({
+        label: "Au potager",
+        startDay: toDay(cursorMs),
+        endDay: toDay(cursorMs + d3 * DAY),
+      });
+      cursorMs = cursorMs + d3 * DAY;
+    }
+
+    const totalDays = toDay(cursorMs) || null;
+    const isComplete = totalDays !== null && daysSincePlanted >= totalDays;
+
+    let currentSegmentLabel: string | null = null;
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      const isLast = i === segments.length - 1;
+      if (
+        daysSincePlanted >= seg.startDay &&
+        (isLast ? daysSincePlanted <= seg.endDay : daysSincePlanted < seg.endDay)
+      ) {
+        currentSegmentLabel = seg.label;
+        break;
+      }
+    }
+
+    nextPhaseAction = computeNextPhaseAction(
+      currentSegmentLabel,
+      userPlant.repiquage_at ?? null,
+      userPlant.transplant_at ?? null,
+      userPlant.sowing_type ?? null,
+      d2,
+      isComplete
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -193,6 +306,11 @@ export default async function PlantDetailPage({
             style={{ fontFamily: "Fraunces, serif" }}
           >
             {plant.name}
+            {variety && (
+              <span className="text-[#7D766E] font-normal text-2xl ml-2">
+                — {variety.name}
+              </span>
+            )}
           </h1>
           <p className="text-sm text-[#7D766E] mt-1">
             Quantité: {userPlant.quantity}
@@ -237,6 +355,83 @@ export default async function PlantDetailPage({
           </button>
         </form>
       </div>
+
+      <Card className="border-[#E8E4DE]">
+        <CardHeader className="pb-3">
+          <CardTitle
+            className="text-base text-[#2A2622]"
+            style={{ fontFamily: "Fraunces, serif" }}
+          >
+            Variété
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            action={async (formData: FormData) => {
+              "use server";
+              const value = formData.get("variety_id") as string;
+              const varietyId = value === "" ? null : parseInt(value, 10);
+              await updateVariety(userPlantId, isNaN(varietyId as number) ? null : varietyId);
+            }}
+            className="flex flex-wrap items-end gap-3"
+          >
+            <div className="flex-1 min-w-0">
+              <select
+                name="variety_id"
+                defaultValue={userPlant.variety_id ? String(userPlant.variety_id) : ""}
+                className="w-full px-3 py-2 border border-[#E8E4DE] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A3D] bg-white"
+              >
+                <option value="">Aucune variété</option>
+                {plantVarieties.map((v) => (
+                  <option key={v.id} value={String(v.id)}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium bg-[#2D5A3D] hover:bg-[#3D7A52] text-white rounded-lg transition-colors shrink-0"
+            >
+              {variety ? "Modifier variété" : "Ajouter variété"}
+            </button>
+          </form>
+
+          <form
+            action={async (formData: FormData) => {
+              "use server";
+              const name = formData.get("new_variety_name") as string;
+              if (!name?.trim()) return;
+              const result = await createVariety(plant.id, name.trim());
+              if (!("error" in result)) {
+                await updateVariety(userPlantId, result.id);
+              }
+            }}
+            className="flex gap-3 mt-3"
+          >
+            <input
+              type="text"
+              name="new_variety_name"
+              placeholder="Créer une nouvelle variété..."
+              className="flex-1 px-3 py-2 border border-[#E8E4DE] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A3D] bg-white"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium border border-[#2D5A3D] text-[#2D5A3D] hover:bg-[#2D5A3D] hover:text-white rounded-lg transition-colors shrink-0"
+            >
+              Créer
+            </button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {nextPhaseAction && (
+        <AdvancePhaseCard
+          userPlantId={userPlantId}
+          quantity={userPlant.quantity}
+          nextPhaseAction={nextPhaseAction}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-[#E8E4DE]">

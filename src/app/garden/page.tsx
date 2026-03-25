@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { gardens, user_plants, plants, plant_calendars } from "@/lib/db/schema";
+import { gardens, user_plants, plants, plant_calendars, varieties } from "@/lib/db/schema";
 import { eq, inArray, and } from "drizzle-orm";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +37,7 @@ export default async function GardenPage() {
     userPlant: typeof user_plants.$inferSelect;
     plant: typeof plants.$inferSelect;
     calendar: PlantCalendar | null;
+    varietyName: string | null;
   }> = [];
 
   if (hasGarden) {
@@ -44,9 +45,11 @@ export default async function GardenPage() {
       .select({
         userPlant: user_plants,
         plant: plants,
+        varietyName: varieties.name,
       })
       .from(user_plants)
       .innerJoin(plants, eq(user_plants.plant_id, plants.id))
+      .leftJoin(varieties, eq(user_plants.variety_id, varieties.id))
       .where(eq(user_plants.user_id, session.user.id));
 
     const plantIds = rows.map((r) => r.plant.id);
@@ -70,6 +73,7 @@ export default async function GardenPage() {
         userPlant: row.userPlant,
         plant: row.plant,
         calendar: cal,
+        varietyName: row.varietyName ?? null,
       });
     }
   }
@@ -225,9 +229,17 @@ export default async function GardenPage() {
 
       {gardenPlants.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {gardenPlants.map(({ userPlant, plant, calendar }) => {
+          {gardenPlants.map(({ userPlant, plant, calendar, varietyName }) => {
             const status = getStatusLabel(calendar, currentWeek);
             const emoji = getPlantEmoji(plant.name);
+
+            const plantedDateShort = userPlant.planted_date
+              ? new Date(userPlant.planted_date + "T00:00:00").toLocaleDateString("fr-CA", {
+                  day: "numeric",
+                  month: "short",
+                })
+              : null;
+
             return (
               <Link key={userPlant.id} href={`/garden/${userPlant.id}`}>
                 <Card className="border-[#E8E4DE] hover:-translate-y-px hover:shadow-md transition-all duration-200 cursor-pointer h-full">
@@ -241,10 +253,20 @@ export default async function GardenPage() {
                             style={{ fontFamily: "Fraunces, serif" }}
                           >
                             {plant.name}
+                            {varietyName && (
+                              <span className="text-[#7D766E] font-normal">
+                                {" "}— {varietyName}
+                              </span>
+                            )}
                           </h3>
                           <p className="text-xs text-[#7D766E] mt-0.5">
                             Qté: {userPlant.quantity}
                           </p>
+                          {plantedDateShort && (
+                            <p className="text-xs text-[#7D766E]">
+                              Semé le {plantedDateShort}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <span

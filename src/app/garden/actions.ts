@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { gardens, user_plants, plant_steps, plants, observations } from "@/lib/db/schema";
+import { gardens, user_plants, plant_steps, plants, observations, varieties } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { stepObservationContent } from "@/lib/step-utils";
@@ -47,7 +47,8 @@ export async function addPlant(
   plantId: number,
   quantity: number,
   plantedDate?: string,
-  sowingType?: "indoor" | "outdoor"
+  sowingType?: "indoor" | "outdoor",
+  varietyId?: number
 ) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -67,20 +68,27 @@ export async function addPlant(
     return { error: "Potager introuvable" };
   }
 
+  if (varietyId) {
+    const variety = await db.query.varieties.findFirst({
+      where: (v, { eq, and }) =>
+        and(eq(v.id, varietyId), eq(v.plant_id, plantId)),
+    });
+    if (!variety) {
+      return { error: "Variété invalide pour cette plante" };
+    }
+  }
+
   try {
     await db.insert(user_plants).values({
       user_id: session.user.id,
       garden_id: gardenId,
       plant_id: plantId,
+      variety_id: varietyId ?? null,
       quantity,
       planted_date: plantedDate ?? null,
       sowing_type: sowingType ?? null,
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("unique") || message.includes("duplicate")) {
-      return { error: "Cette plante est déjà dans votre potager" };
-    }
+  } catch {
     return { error: "Erreur lors de l'ajout de la plante" };
   }
 
@@ -171,10 +179,16 @@ export async function advancePhase(
   const stepType = targetPhase === "repiquage" ? "repiquage" : "transplantation";
   const advanceQty = quantity ?? userPlant.quantity;
 
-  // Fetch plant name for observation
+  // Fetch plant name and variety for observation
   const plant = await db.query.plants.findFirst({
     where: (p, { eq }) => eq(p.id, userPlant.plant_id),
   });
+
+  const variety = userPlant.variety_id
+    ? await db.query.varieties.findFirst({
+        where: (v, { eq }) => eq(v.id, userPlant.variety_id!),
+      })
+    : null;
 
   if (advanceQty < 1 || advanceQty > userPlant.quantity) {
     return { error: "Quantité invalide" };
@@ -199,6 +213,7 @@ export async function advancePhase(
         transplant_at: targetPhase === "transplant" ? today : userPlant.transplant_at,
         notes: userPlant.notes,
         sowing_type: userPlant.sowing_type,
+        variety_id: userPlant.variety_id,
       })
       .returning({ id: user_plants.id });
 
@@ -233,11 +248,85 @@ export async function advancePhase(
       plant_id: userPlant.plant_id,
       week_number: getCurrentWeek(),
       year: new Date().getFullYear(),
-      content: stepObservationContent(stepType as "repiquage" | "transplantation", plant.name),
+      content: stepObservationContent(stepType as "repiquage" | "transplantation", plant.name, variety?.name),
     });
   }
 
   revalidatePath("/dashboard");
   revalidatePath("/garden");
   revalidatePath("/journal");
+}
+
+export async function createVariety(
+  plantId: number,
+  name: string
+): Promise<{ id: number; name: string } | { error: string }> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "Non authentifié" };
+  }
+
+  const trimmed = name.trim().slice(0, 100);
+  if (!trimmed) {
+    return { error: "Le nom de la variété est requis" };
+  }
+
+  try {
+    const [created] = await db
+      .insert(varieties)
+      .values({ plant_id: plantId, name: trimmed })
+      .returning({ id: varieties.id, name: varieties.name });
+    revalidatePath("/garden/add");
+    return created;
+  } catch {
+    // Likely unique constraint — return existing
+    const existing = await db.query.varieties.findFirst({
+      where: (v, { eq, and }) =>
+        and(eq(v.plant_id, plantId), eq(v.name, trimmed)),
+    });
+    if (existing) {
+      return { id: existing.id, name: existing.name };
+    }
+    return { error: "Erreur lors de la création de la variété" };
+  }
+}
+
+export async function updateVariety(
+  userPlantId: number,
+  varietyId: number | null
+): Promise<{ error?: string }> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "Non authentifié" };
+  }
+
+  const userPlant = await db.query.user_plants.findFirst({
+    where: (up, { eq }) => eq(up.id, userPlantId),
+  });
+
+  if (!userPlant || userPlant.user_id !== session.user.id) {
+    return { error: "Plante introuvable ou accès refusé" };
+  }
+
+  if (varietyId !== null) {
+    const variety = await db.query.varieties.findFirst({
+      where: (v, { eq, and }) =>
+        and(eq(v.id, varietyId), eq(v.plant_id, userPlant.plant_id)),
+    });
+    if (!variety) {
+      return { error: "Variété invalide pour cette plante" };
+    }
+  }
+
+  await db
+    .update(user_plants)
+    .set({ variety_id: varietyId })
+    .where(
+      and(eq(user_plants.id, userPlantId), eq(user_plants.user_id, session.user.id))
+    );
+
+  revalidatePath("/garden");
+  revalidatePath(`/garden/${userPlantId}`);
+  revalidatePath("/dashboard");
+  return {};
 }

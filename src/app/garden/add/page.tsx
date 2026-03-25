@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { plants, user_plants, gardens, companion_plants, plant_calendars } from "@/lib/db/schema";
+import { plants, user_plants, gardens, companion_plants, plant_calendars, varieties } from "@/lib/db/schema";
 import { eq, inArray, or, and } from "drizzle-orm";
 import Link from "next/link";
 import { PlantSearchFilter } from "@/components/garden/plant-search-filter";
@@ -40,12 +40,35 @@ export default async function GardenAddPage() {
     .orderBy(plants.name);
 
   const existingUserPlants = await db
-    .select({ plant_id: user_plants.plant_id })
+    .select({
+      plant_id: user_plants.plant_id,
+      variety_id: user_plants.variety_id,
+      quantity: user_plants.quantity,
+      planted_date: user_plants.planted_date,
+    })
     .from(user_plants)
     .where(eq(user_plants.user_id, session.user.id));
 
   const gardenPlantIds = existingUserPlants.map((up) => up.plant_id);
   const allPlantIds = allPlants.map((p) => p.id);
+
+  const allVarieties = await db.select().from(varieties);
+
+  const varietiesByPlant: Record<number, Array<{ id: number; name: string }>> = {};
+  for (const v of allVarieties) {
+    if (!varietiesByPlant[v.plant_id]) {
+      varietiesByPlant[v.plant_id] = [];
+    }
+    varietiesByPlant[v.plant_id].push({ id: v.id, name: v.name });
+  }
+
+  const varietyNameMap = new Map(allVarieties.map((v) => [v.id, v.name]));
+
+  const existingBatches = existingUserPlants.map((up) => ({
+    plantId: up.plant_id,
+    varietyName: up.variety_id ? (varietyNameMap.get(up.variety_id) ?? null) : null,
+    quantity: up.quantity,
+  }));
 
   const calendarRows = allPlantIds.length > 0
     ? await db
@@ -106,7 +129,6 @@ export default async function GardenAddPage() {
     const gardenPlantNameMap = new Map(gardenPlantNames.map((p) => [p.id, p.name]));
 
     for (const c of rawCompanions) {
-      // If plant_a is in garden, show on plant_b's card (the candidate)
       if (gardenPlantIds.includes(c.plant_a_id)) {
         companionRows.push({
           candidatePlantId: c.plant_b_id,
@@ -115,7 +137,6 @@ export default async function GardenAddPage() {
           gardenPlantName: gardenPlantNameMap.get(c.plant_a_id) ?? "",
         });
       }
-      // If plant_b is in garden, show on plant_a's card (the candidate)
       if (gardenPlantIds.includes(c.plant_b_id)) {
         companionRows.push({
           candidatePlantId: c.plant_a_id,
@@ -159,6 +180,8 @@ export default async function GardenAddPage() {
         currentWeek={currentWeek}
         zone={zone}
         indoorDurations={Object.fromEntries(indoorDurations)}
+        varietiesByPlant={varietiesByPlant}
+        existingBatches={existingBatches}
       />
     </div>
   );

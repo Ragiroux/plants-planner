@@ -216,3 +216,42 @@ export function getPhasesStartingNextWeek(row: PlantActionRow, nextWeek: number,
     return true;
   });
 }
+
+/**
+ * Determines the next phase action for a plant based on its current lifecycle segment.
+ *
+ * @param segmentLabel - Current lifecycle segment label (e.g., "Semis intérieur", "Acclimatation")
+ * @param repiquageAt - Date when repiquage was done (null if not yet)
+ * @param transplantAt - Date when transplant was done (null if not yet)
+ * @param sowingType - "indoor" | "outdoor" | null
+ * @param daysRepiquageToTransplant - Duration from repiquage to transplant (null for direct-sow indoor)
+ * @param isComplete - Whether the plant has completed its full lifecycle
+ */
+export function computeNextPhaseAction(
+  segmentLabel: string | null,
+  repiquageAt: string | null,
+  transplantAt: string | null,
+  sowingType: "indoor" | "outdoor" | null,
+  daysRepiquageToTransplant: number | null,
+  isComplete: boolean
+): "repiquage" | "transplant" | null {
+  if (isComplete || !segmentLabel) return null;
+
+  if (segmentLabel === "Semis intérieur" && !repiquageAt) {
+    if (sowingType === "indoor" && daysRepiquageToTransplant === null) {
+      // indoor direct-sow: no repiquage, advance straight to transplant after acclimatation
+      return null;
+    }
+    return "repiquage";
+  }
+
+  if (segmentLabel === "Acclimatation") {
+    return "transplant";
+  }
+
+  if (segmentLabel === "Repiquage" && !transplantAt) {
+    return "transplant";
+  }
+
+  return null;
+}

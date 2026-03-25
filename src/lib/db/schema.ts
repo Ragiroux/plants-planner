@@ -167,6 +167,19 @@ export const companion_plants = pgTable(
   ]
 );
 
+export const varieties = pgTable(
+  "varieties",
+  {
+    id: serial("id").primaryKey(),
+    plant_id: integer("plant_id")
+      .notNull()
+      .references(() => plants.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    created_at: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [unique().on(table.plant_id, table.name)]
+);
+
 export const user_plants = pgTable(
   "user_plants",
   {
@@ -180,6 +193,9 @@ export const user_plants = pgTable(
     plant_id: integer("plant_id")
       .notNull()
       .references(() => plants.id, { onDelete: "cascade" }),
+    variety_id: integer("variety_id").references(() => varieties.id, {
+      onDelete: "set null",
+    }),
     quantity: integer("quantity").default(1).notNull(),
     planted_date: date("planted_date"),
     sowing_type: sowingTypeEnum("sowing_type"),

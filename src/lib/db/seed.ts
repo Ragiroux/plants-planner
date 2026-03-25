@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { eq, and } from "drizzle-orm";
 import * as schema from "./schema";
-import { plants as plantSeedData } from "./seed-data";
+import { plants as plantSeedData, varietySeedData } from "./seed-data";
 import { companions as companionSeedData } from "./companion-data";
 
 const connectionString = process.env.DATABASE_URL;
@@ -208,6 +208,38 @@ async function seedCompanions(slugToId: Map<string, number>): Promise<void> {
   );
 }
 
+async function seedVarieties(slugToId: Map<string, number>): Promise<void> {
+  let count = 0;
+  for (const [slug, varietyNames] of Object.entries(varietySeedData)) {
+    const plantId = slugToId.get(slug);
+    if (!plantId) {
+      console.warn(`  Skipping varieties for unknown plant slug: ${slug}`);
+      continue;
+    }
+    for (const name of varietyNames) {
+      const existing = await db
+        .select({ id: schema.varieties.id })
+        .from(schema.varieties)
+        .where(
+          and(
+            eq(schema.varieties.plant_id, plantId),
+            eq(schema.varieties.name, name)
+          )
+        )
+        .limit(1);
+
+      if (existing.length === 0) {
+        await db.insert(schema.varieties).values({
+          plant_id: plantId,
+          name,
+        });
+        count++;
+      }
+    }
+  }
+  console.log(`  Varieties inserted: ${count}`);
+}
+
 async function main(): Promise<void> {
   console.log("Starting seed...");
 
@@ -219,6 +251,9 @@ async function main(): Promise<void> {
 
   await seedCompanions(slugToId);
   console.log("Companions seeded.");
+
+  await seedVarieties(slugToId);
+  console.log("Varieties seeded.");
 
   console.log("Seed complete.");
   await client.end();

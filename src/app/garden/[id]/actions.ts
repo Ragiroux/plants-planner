@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { user_plants, plants, plant_steps, observations } from "@/lib/db/schema";
+import { user_plants, plants, plant_steps, observations, varieties } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { computeNextActionDate, stepObservationContent, type StepType } from "@/lib/step-utils";
@@ -34,6 +34,12 @@ export async function logStep(
     return { error: "Plante introuvable" };
   }
 
+  const variety = userPlant.variety_id
+    ? await db.query.varieties.findFirst({
+        where: (v, { eq }) => eq(v.id, userPlant.variety_id!),
+      })
+    : null;
+
   const next_action_date = computeNextActionDate(stepType, plant);
 
   await db.insert(plant_steps).values({
@@ -49,7 +55,7 @@ export async function logStep(
     plant_id: userPlant.plant_id,
     week_number: getCurrentWeek(),
     year: new Date().getFullYear(),
-    content: stepObservationContent(stepType, plant.name),
+    content: stepObservationContent(stepType, plant.name, variety?.name),
   });
 
   revalidatePath(`/garden/${userPlantId}`);

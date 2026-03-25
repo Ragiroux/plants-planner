@@ -122,6 +122,7 @@ describe("logStep ownership validation", () => {
       user_id: "other-user",
       garden_id: 1,
       plant_id: 1,
+      variety_id: null,
       quantity: 1,
       planted_date: null,
       repiquage_at: null,

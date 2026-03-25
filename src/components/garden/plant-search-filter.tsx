@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { addPlant } from "@/app/garden/actions";
+import { addPlant, createVariety } from "@/app/garden/actions";
 import { getEffectiveLifecycleDurations, DEFAULT_INDOOR_DAYS } from "@/lib/lifecycle-calc";
 
 interface Plant {
@@ -24,6 +24,17 @@ interface CalendarEntry {
   days_to_maturity_max: number | null;
 }
 
+interface VarietyOption {
+  id: number;
+  name: string;
+}
+
+interface ExistingBatch {
+  plantId: number;
+  varietyName: string | null;
+  quantity: number;
+}
+
 interface PlantSearchFilterProps {
   plants: Plant[];
   gardenId: number;
@@ -38,6 +49,8 @@ interface PlantSearchFilterProps {
   currentWeek?: number;
   zone?: string;
   indoorDurations?: Record<number, number>;
+  varietiesByPlant?: Record<number, VarietyOption[]>;
+  existingBatches?: ExistingBatch[];
 }
 
 const sunLabels: Record<string, string> = {
@@ -104,6 +117,8 @@ export function PlantSearchFilter({
   companionData,
   calendarData = {},
   indoorDurations = {},
+  varietiesByPlant = {},
+  existingBatches = [],
 }: PlantSearchFilterProps) {
   const todayISO = new Date().toISOString().slice(0, 10);
 
@@ -115,6 +130,12 @@ export function PlantSearchFilter({
   const [plantedDates, setPlantedDates] = useState<Record<number, string>>({});
   const [sowingTypes, setSowingTypes] = useState<Record<number, "indoor" | "outdoor">>({});
   const [manualOverrides, setManualOverrides] = useState<Set<number>>(new Set());
+
+  const [selectedVarietyIds, setSelectedVarietyIds] = useState<Record<number, number | null>>({});
+  const [newVarietyInputs, setNewVarietyInputs] = useState<Record<number, string>>({});
+  const [localVarieties, setLocalVarieties] = useState<Record<number, VarietyOption[]>>(varietiesByPlant);
+  const [creatingVariety, setCreatingVariety] = useState<Record<number, boolean>>({});
+  const [varietyErrors, setVarietyErrors] = useState<Record<number, string>>({});
 
   const filtered = plants.filter((p) =>
     p.name.toLowerCase().includes(query.toLowerCase())
@@ -265,6 +286,59 @@ export function PlantSearchFilter({
     };
   }
 
+  function handleVarietySelectChange(plantId: number, value: string) {
+    if (value === "__new__") {
+      setSelectedVarietyIds((prev) => ({ ...prev, [plantId]: null }));
+    } else if (value === "") {
+      setSelectedVarietyIds((prev) => ({ ...prev, [plantId]: null }));
+    } else {
+      setSelectedVarietyIds((prev) => ({ ...prev, [plantId]: parseInt(value, 10) }));
+      setNewVarietyInputs((prev) => ({ ...prev, [plantId]: "" }));
+    }
+  }
+
+  function getVarietySelectValue(plantId: number): string {
+    const id = selectedVarietyIds[plantId];
+    const input = newVarietyInputs[plantId];
+    if (id !== undefined && id !== null) return String(id);
+    if (input !== undefined && input !== "") return "__new__";
+    // Check if __new__ was explicitly selected but input is empty
+    return "";
+  }
+
+  function isNewVarietyMode(plantId: number): boolean {
+    return getVarietySelectValue(plantId) === "__new__";
+  }
+
+  async function handleCreateVariety(plantId: number) {
+    const name = newVarietyInputs[plantId]?.trim() ?? "";
+    if (!name) return;
+
+    setCreatingVariety((prev) => ({ ...prev, [plantId]: true }));
+    setVarietyErrors((prev) => {
+      const next = { ...prev };
+      delete next[plantId];
+      return next;
+    });
+
+    const result = await createVariety(plantId, name);
+
+    setCreatingVariety((prev) => ({ ...prev, [plantId]: false }));
+
+    if ("error" in result) {
+      setVarietyErrors((prev) => ({ ...prev, [plantId]: result.error }));
+      return;
+    }
+
+    const newVariety: VarietyOption = { id: result.id, name: result.name };
+    setLocalVarieties((prev) => ({
+      ...prev,
+      [plantId]: [...(prev[plantId] ?? []), newVariety],
+    }));
+    setSelectedVarietyIds((prev) => ({ ...prev, [plantId]: newVariety.id }));
+    setNewVarietyInputs((prev) => ({ ...prev, [plantId]: "" }));
+  }
+
   async function handleAdd(plantId: number) {
     setPending(plantId);
     setErrors((prev) => {
@@ -275,13 +349,23 @@ export function PlantSearchFilter({
     const qty = getQuantity(plantId);
     const date = getPlantedDate(plantId);
     const sowingType = sowingTypes[plantId] ?? undefined;
-    const result = await addPlant(gardenId, plantId, qty, date, sowingType);
+    const varietyId = selectedVarietyIds[plantId] ?? undefined;
+    const result = await addPlant(gardenId, plantId, qty, date, sowingType, varietyId);
     setPending(null);
     if (result?.error) {
       setErrors((prev) => ({ ...prev, [plantId]: result.error }));
     } else {
       setAdded((prev) => new Set(prev).add(plantId));
     }
+  }
+
+  function formatExistingBatches(plantId: number): string | null {
+    const batches = existingBatches.filter((b) => b.plantId === plantId);
+    if (batches.length === 0) return null;
+    const parts = batches.map((b) =>
+      b.varietyName ? `${b.quantity}× ${b.varietyName}` : `${b.quantity}× (sans variété)`
+    );
+    return `Déjà dans votre potager : ${parts.join(", ")}`;
   }
 
   return (
@@ -298,9 +382,7 @@ export function PlantSearchFilter({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {filtered.map((plant) => {
-          const isAdded = added.has(plant.id) || gardenPlantIds.includes(plant.id);
-          const isAlreadyInGarden =
-            gardenPlantIds.includes(plant.id) && !added.has(plant.id);
+          const isAdded = added.has(plant.id);
 
           const companions = companionData.filter(
             (c) => c.candidatePlantId === plant.id
@@ -324,6 +406,10 @@ export function PlantSearchFilter({
             const week = dateToWeek(dateStr);
             return week < cal.outdoor_sow_start;
           })();
+
+          const plantVarieties = localVarieties[plant.id] ?? [];
+          const existingBatchesInfo = formatExistingBatches(plant.id);
+          const newVarietyMode = isNewVarietyMode(plant.id);
 
           return (
             <div
@@ -418,14 +504,63 @@ export function PlantSearchFilter({
                   >
                     {pending === plant.id
                       ? "..."
-                      : isAlreadyInGarden
-                      ? "Déjà ajouté"
                       : isAdded
                       ? `Ajouté ✓ (×${qty})`
                       : "Ajouter"}
                   </button>
                 </div>
               </div>
+
+              {!isAdded && (
+                <div className="space-y-1.5">
+                  <select
+                    value={getVarietySelectValue(plant.id)}
+                    onChange={(e) => handleVarietySelectChange(plant.id, e.target.value)}
+                    className="w-full px-3 py-1.5 border border-[#E8E4DE] rounded-lg text-xs text-[#5C5650] focus:outline-none focus:ring-2 focus:ring-[#2D5A3D] bg-white"
+                  >
+                    <option value="">Aucune variété</option>
+                    {plantVarieties.map((v) => (
+                      <option key={v.id} value={String(v.id)}>
+                        {v.name}
+                      </option>
+                    ))}
+                    <option value="__new__">Nouvelle variété...</option>
+                  </select>
+
+                  {newVarietyMode && (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nom de la variété"
+                        value={newVarietyInputs[plant.id] ?? ""}
+                        onChange={(e) =>
+                          setNewVarietyInputs((prev) => ({
+                            ...prev,
+                            [plant.id]: e.target.value,
+                          }))
+                        }
+                        className="flex-1 px-3 py-1.5 border border-[#E8E4DE] rounded-lg text-xs text-[#5C5650] focus:outline-none focus:ring-2 focus:ring-[#2D5A3D] bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleCreateVariety(plant.id)}
+                        disabled={creatingVariety[plant.id]}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#2D5A3D] hover:bg-[#3D7A52] text-white transition-colors disabled:opacity-60"
+                      >
+                        {creatingVariety[plant.id] ? "..." : "Créer"}
+                      </button>
+                    </div>
+                  )}
+
+                  {varietyErrors[plant.id] && (
+                    <p className="text-xs text-[#C4463A]">{varietyErrors[plant.id]}</p>
+                  )}
+                </div>
+              )}
+
+              {existingBatchesInfo && (
+                <p className="text-xs text-[#7D766E]">{existingBatchesInfo}</p>
+              )}
 
               {showToggle && (
                 <div className="space-y-2">

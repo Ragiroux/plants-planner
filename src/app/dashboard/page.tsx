@@ -8,6 +8,7 @@ import {
   gardens,
   plant_steps,
   observations,
+  varieties,
 } from "@/lib/db/schema";
 import { eq, inArray, lt, and, isNotNull, max } from "drizzle-orm";
 import Link from "next/link";
@@ -27,6 +28,7 @@ import {
   phaseOrder,
   getSmartActivePhases,
   getPhasesStartingNextWeek,
+  computeNextPhaseAction,
 } from "@/lib/phase-utils";
 import type { PlantActionRow } from "@/lib/phase-utils";
 import { generateTip, type TipContext } from "@/lib/tip-templates";
@@ -71,9 +73,11 @@ export default async function DashboardPage() {
     .select({
       userPlant: user_plants,
       plant: plants,
+      varietyName: varieties.name,
     })
     .from(user_plants)
     .innerJoin(plants, eq(user_plants.plant_id, plants.id))
+    .leftJoin(varieties, eq(user_plants.variety_id, varieties.id))
     .where(eq(user_plants.user_id, session.user.id));
 
   const weeksUntilSeason = offSeason ? Math.max(0, 1 - currentWeek + 44) : 0;
@@ -368,6 +372,7 @@ export default async function DashboardPage() {
     const cal = row.calendar;
     const userPlantRow = userPlantRows.find((r) => r.userPlant.id === row.id);
     const quantity = userPlantRow?.userPlant.quantity ?? 1;
+    const varietyName = userPlantRow?.varietyName ?? null;
 
     if (plantedDate) {
       const DAY = 24 * 60 * 60 * 1000;
@@ -477,22 +482,14 @@ export default async function DashboardPage() {
       const isOverdue =
         currentSegment !== null && daysSincePlanted > currentSegment.endDay;
 
-      // Determine next phase action
-      let nextPhaseAction: "repiquage" | "transplant" | null = null;
-      if (!isComplete && currentSegment) {
-        if (currentSegment.label === "Semis intérieur" && !row.repiquageAt) {
-          if (sowingType === "indoor" && d2 === null) {
-            // indoor direct-sow: no repiquage, advance straight to transplant after acclimatation
-            nextPhaseAction = null;
-          } else {
-            nextPhaseAction = "repiquage";
-          }
-        } else if (currentSegment.label === "Acclimatation") {
-          nextPhaseAction = "transplant";
-        } else if (currentSegment.label === "Repiquage" && !row.transplantAt) {
-          nextPhaseAction = "transplant";
-        }
-      }
+      const nextPhaseAction = computeNextPhaseAction(
+        currentSegment?.label ?? null,
+        row.repiquageAt,
+        row.transplantAt,
+        sowingType,
+        d2,
+        isComplete
+      );
 
       const gardenActions =
         !isComplete && currentSegment?.label === "Au potager"
@@ -532,6 +529,7 @@ export default async function DashboardPage() {
         daysRepiquageToTransplant: row.daysRepiquageToTransplant,
         daysTransplantToHarvest: row.daysTransplantToHarvest,
         quantity,
+        varietyName,
         nextPhaseAction,
         gardenActions,
         sowingType,
@@ -562,6 +560,7 @@ export default async function DashboardPage() {
       daysRepiquageToTransplant: row.daysRepiquageToTransplant,
       daysTransplantToHarvest: row.daysTransplantToHarvest,
       quantity,
+      varietyName,
       nextPhaseAction: null,
       gardenActions: null,
       sowingType: row.sowingType ?? null,

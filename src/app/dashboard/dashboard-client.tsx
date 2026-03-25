@@ -44,6 +44,7 @@ interface TrackingPlant {
   daysRepiquageToTransplant: number | null;
   daysTransplantToHarvest: number | null;
   quantity: number;
+  varietyName: string | null;
   nextPhaseAction: "repiquage" | "transplant" | null;
   gardenActions: readonly string[] | null;
   sowingType: "indoor" | "outdoor" | null;
@@ -341,7 +342,7 @@ export function DashboardClient({
                   <span className="text-xl shrink-0">{plant.emoji}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-[#2A2622] truncate">
-                      {plant.name}
+                      {plant.name}{plant.varietyName && <span className="font-normal text-[#7D766E]"> · {plant.varietyName}</span>}
                     </p>
                     <p className="text-xs text-[#A9A29A] mt-0.5">
                       Date de semis non enregistrée —{" "}
@@ -381,6 +382,7 @@ export function DashboardClient({
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-[#2A2622] truncate">
                               {plant.name}
+                              {plant.varietyName && <span className="font-normal text-[#7D766E]"> · {plant.varietyName}</span>}
                               {plant.quantity > 1 && (
                                 <span className="text-[#A9A29A] font-normal"> ×{plant.quantity}</span>
                               )}
@@ -539,6 +541,7 @@ export function DashboardClient({
                   <li key={plant.id} className="flex items-center justify-between gap-2">
                     <span className="text-sm text-[#3D3832]">
                       <span className="font-semibold text-[#2A2622]">{plant.emoji} {plant.name}</span>
+                      {plant.varietyName && <span className="text-[#7D766E]"> · {plant.varietyName}</span>}
                       {plant.quantity > 1 && (
                         <span className="text-[#A9A29A] font-normal"> x{plant.quantity}</span>
                       )}
@@ -627,6 +630,7 @@ export function DashboardClient({
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-[#2A2622] truncate">
                               {plant.name}
+                              {plant.varietyName && <span className="font-normal text-[#7D766E]"> · {plant.varietyName}</span>}
                               {plant.quantity > 1 && (
                                 <span className="text-[#A9A29A] font-normal"> x{plant.quantity}</span>
                               )}

@@ -3918,3 +3918,145 @@ export const plants: PlantSeedData[] = [
     },
   },
 ];
+
+export const varietySeedData: Record<string, string[]> = {
+  // Légumes-fruits
+  tomate: [
+    "Big Beef", "Celebrity", "Beefsteak", "Cherokee Purple", "Sungold",
+    "Roma", "San Marzano", "Mémé de Beauce", "Manitoba", "Moskvich",
+    "Brandywine", "Ananas", "Early Cherry", "Gold Nugget", "Siletz",
+    "Québec No 13", "Précociébec", "Canabec Rose", "Petit Moineau",
+    "Cerise", "Coeur de boeuf", "Noire de Crimée",
+  ],
+  "piment-poivron": [
+    // Poivrons doux
+    "California Wonder", "King of the North", "Doe Hill", "Red Marconi",
+    "Purple Beauty", "Chocolate", "Ace", "Petit Marseillais",
+    // Piments forts
+    "Jalapeño", "Cayenne", "Habanero", "Hungarian Hot Wax",
+    "Serrano", "Poblano", "Thaï", "Anaheim", "Scotch Bonnet",
+    "d'Espelette", "Shishito",
+  ],
+  aubergine: [
+    "Black Beauty", "Diamond", "Little Finger", "Ping Tung Long",
+  ],
+  concombre: [
+    "Marketmore 76", "Tante Alice", "Spacemaster", "Citron",
+    "National Pickling", "Diva", "Straight Eight", "Suyo Long",
+    "Green Finger",
+  ],
+  courgette: [
+    "Black Beauty", "Costata Romanesco", "Ronde de Nice", "Gold Rush",
+    "Genovese", "Pâtisson", "Crookneck", "Straightneck",
+  ],
+  "citrouille-courge-hiver": [
+    "Butternut", "Spaghetti", "Buttercup", "Acorn",
+    "Potimarron", "Delicata", "Hubbard", "Black Futsu",
+    "Canadian Crookneck", "Citrouille",
+  ],
+  melon: [
+    "Melon de Montréal", "Melon d'Oka", "Minnesota Midget",
+    "Charentais", "Sugar Baby", "Crème de Saskatchewan",
+  ],
+  tomatillo: [],
+
+  // Légumineuses
+  "haricot-nain": [
+    "Provider", "Maxibel", "Pencil Pod Black", "Rocquencourt",
+    "Royal Burgundy", "Fin de Bagnol", "Black Valentine",
+    "Fortin", "Thibodeau",
+  ],
+  "haricot-grimpant": [
+    "Monte Gusto", "Rattlesnake", "Kilomètre", "Grand-mère Dinel",
+  ],
+  pois: [
+    "Sugar Snap", "Sugar Ann", "Green Arrow", "Lincoln",
+    "Petit Provençal", "Oregon Sugar Pod", "Alaska",
+  ],
+  "soja-edamame": [],
+  mais: [
+    "Peaches & Cream", "Golden Bantam", "Illini Gold",
+    "Blue Hopi", "Popcorn",
+  ],
+
+  // Légumes-racines
+  carotte: [
+    "Scarlet Nantes", "Danvers 126", "Imperator", "Chantenay",
+    "Touchon", "Purple Haze", "Bolero",
+  ],
+  betterave: [
+    "Detroit Dark Red", "Chioggia", "Cylindra", "Bull's Blood",
+    "Crosby's Egyptian", "Golden",
+  ],
+  oignon: [
+    "Espagnol jaune", "Stuttgarter", "Patterson",
+    "Red Burgundy", "Walla Walla", "Blanc",
+  ],
+  "radis-de-printemps": [
+    "Cherry Belle", "French Breakfast", "Easter Egg",
+    "Watermelon", "Champion", "Hailstone",
+  ],
+  "radis-hiver": [
+    "Daikon", "Rose de Chine", "Noir d'hiver",
+  ],
+  panais: [],
+  navet: [],
+  rutabaga: [],
+  topinambour: [],
+
+  // Légumes-feuilles
+  laitue: [
+    "Buttercrunch", "Iceberg", "Parris Island Cos",
+    "Feuille de chêne", "Feuille de chêne rouge",
+    "Black Seeded Simpson", "Grand Rapids",
+    "Merveille des 4 saisons", "Lollo Rossa", "Sucrine", "Merlot",
+  ],
+  epinard: [
+    "Bloomsdale Long Standing", "Géant d'hiver", "Verdil",
+  ],
+  "chou-frise": [
+    "Lacinato", "Rouge de Russie", "Frisé vert",
+    "Dwarf Blue Curled", "Winterbor", "Redbor",
+  ],
+  "chou-pomme": [
+    "Copenhagen Market", "Golden Acre", "Red Acre",
+    "Savoy", "January King", "Napa",
+  ],
+  brocoli: [
+    "De Cicco", "Waltham 29", "Calabrese",
+    "Purple Peacock", "Green Magic",
+  ],
+  "chou-rave": [],
+  celeri: [
+    "Utah", "Tall Utah 52-70", "Céleri-rave",
+  ],
+
+  // Fines herbes
+  basilic: [
+    "Genovese", "Mammouth", "Purple Ruffles", "Thaï", "Citron", "Perse",
+  ],
+  persil: [
+    "Plat italien", "Frisé",
+  ],
+  coriandre: [
+    "Commune", "Santo", "Vietnamienne",
+  ],
+  ciboulette: [
+    "Commune",
+  ],
+  "ciboulette-chinoise": [
+    "Ail",
+  ],
+  aneth: [
+    "Bouquet", "Mammouth", "Fernleaf",
+  ],
+  origan: [
+    "Grec", "Doré", "Commun",
+  ],
+  "sauge-officinale": [
+    "Officinale", "Tricolore", "Pourpre",
+  ],
+  thym: [
+    "Commun", "Citron", "Serpolet",
+  ],
+};
