@@ -57,16 +57,47 @@ export default async function CalendrierPage() {
 
   const calendarMap = new Map(calendars.map((c) => [c.plant_id, c]));
 
-  const plantRows = userPlantRows.map((row) => ({
-    id: row.userPlant.id,
-    name: row.plant.name,
-    quantity: row.userPlant.quantity,
-    plantedDate: row.userPlant.planted_date ?? null,
-    daysIndoorToRepiquage: row.plant.days_indoor_to_repiquage ?? null,
-    daysRepiquageToTransplant: row.plant.days_repiquage_to_transplant ?? null,
-    daysTransplantToHarvest: row.plant.days_transplant_to_harvest ?? null,
-    calendar: calendarMap.get(row.plant.id) ?? null,
-  }));
+  // Group by plant to merge split lots
+  const grouped = new Map<number, {
+    name: string;
+    totalQuantity: number;
+    plantedDate: string | null;
+    daysIndoorToRepiquage: number | null;
+    daysRepiquageToTransplant: number | null;
+    daysTransplantToHarvest: number | null;
+    calendar: (typeof calendars)[number] | null;
+    firstId: number;
+  }>();
+  for (const row of userPlantRows) {
+    const existing = grouped.get(row.plant.id);
+    if (existing) {
+      existing.totalQuantity += row.userPlant.quantity;
+    } else {
+      grouped.set(row.plant.id, {
+        name: row.plant.name,
+        totalQuantity: row.userPlant.quantity,
+        plantedDate: row.userPlant.planted_date ?? null,
+        daysIndoorToRepiquage: row.plant.days_indoor_to_repiquage ?? null,
+        daysRepiquageToTransplant: row.plant.days_repiquage_to_transplant ?? null,
+        daysTransplantToHarvest: row.plant.days_transplant_to_harvest ?? null,
+        calendar: calendarMap.get(row.plant.id) ?? null,
+        firstId: row.userPlant.id,
+      });
+    }
+  }
+
+  const plantRows = Array.from(grouped.values())
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"))
+    .map((g) => ({
+      id: g.firstId,
+      name: g.name,
+      quantity: g.totalQuantity,
+      plantedDate: g.plantedDate,
+      daysIndoorToRepiquage: g.daysIndoorToRepiquage,
+      daysRepiquageToTransplant: g.daysRepiquageToTransplant,
+      daysTransplantToHarvest: g.daysTransplantToHarvest,
+      calendar: g.calendar,
+    }));
 
   return (
     <div className="space-y-6">
