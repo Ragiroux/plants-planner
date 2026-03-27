@@ -197,10 +197,11 @@ export default async function PlantDetailPage({
       userPlant.sowing_type ?? null,
       calendar ?? null,
       plant.default_indoor_to_transplant ?? null,
-      userPlant.planted_date
+      userPlant.planted_date,
+      userPlant.germinated_at
     );
 
-    const { d1, d1Accl, d2, d3 } = durations;
+    const { dGerm, d1, d2, dAccl, d3 } = durations;
 
     type PhaseSegment = {
       label: string;
@@ -212,30 +213,29 @@ export default async function PlantDetailPage({
     const segments: PhaseSegment[] = [];
     let cursorMs = plantedMs;
 
-    if (d1 !== null) {
-      const indoorEndMs = userPlant.repiquage_at
-        ? new Date(userPlant.repiquage_at + "T00:00:00").getTime()
-        : cursorMs + d1 * DAY;
+    if (dGerm !== null) {
+      const germEndMs = userPlant.germinated_at
+        ? new Date(userPlant.germinated_at + "T00:00:00").getTime()
+        : cursorMs + dGerm * DAY;
       segments.push({
         label: "Semis intérieur",
         startDay: toDay(cursorMs),
-        endDay: toDay(indoorEndMs),
+        endDay: toDay(germEndMs),
       });
-      cursorMs = indoorEndMs;
-
-      if (d1Accl !== null) {
-        const acclEndMs = cursorMs + d1Accl * DAY;
-        segments.push({
-          label: "Acclimatation",
-          startDay: toDay(cursorMs),
-          endDay: toDay(acclEndMs),
-        });
-        cursorMs = acclEndMs;
-      }
+      cursorMs = germEndMs;
     }
-    if (d2 !== null) {
-      const endMs = userPlant.transplant_at
-        ? new Date(userPlant.transplant_at + "T00:00:00").getTime()
+    if (d1 !== null && d1 > 0) {
+      const germeEndMs = cursorMs + d1 * DAY;
+      segments.push({
+        label: "Germé",
+        startDay: toDay(cursorMs),
+        endDay: toDay(germeEndMs),
+      });
+      cursorMs = germeEndMs;
+    }
+    if (d2 !== null && d2 > 0) {
+      const endMs = userPlant.repiquage_at
+        ? new Date(userPlant.repiquage_at + "T00:00:00").getTime()
         : cursorMs + d2 * DAY;
       segments.push({
         label: "Repiquage",
@@ -243,6 +243,15 @@ export default async function PlantDetailPage({
         endDay: toDay(endMs),
       });
       cursorMs = endMs;
+    }
+    if (dAccl !== null) {
+      const acclEndMs = cursorMs + dAccl * DAY;
+      segments.push({
+        label: "Acclimatation",
+        startDay: toDay(cursorMs),
+        endDay: toDay(acclEndMs),
+      });
+      cursorMs = acclEndMs;
     }
     if (d3 !== null) {
       segments.push({

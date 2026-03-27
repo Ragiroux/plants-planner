@@ -392,10 +392,11 @@ export default async function DashboardPage() {
         sowingType,
         cal,
         defaultIndoorToTransplant,
-        plantedDate
+        plantedDate,
+        row.germinatedAt
       );
 
-      const { d1, d1Accl, d2, d3 } = durations;
+      const { dGerm, d1, d2, dAccl, d3 } = durations;
 
       type PhaseSegment = {
         label: string;
@@ -409,32 +410,31 @@ export default async function DashboardPage() {
       const segments: PhaseSegment[] = [];
       let cursorMs = plantedMs;
 
-      if (d1 !== null) {
-        const indoorEndMs = row.repiquageAt
-          ? new Date(row.repiquageAt + "T00:00:00").getTime()
-          : cursorMs + d1 * DAY;
+      if (dGerm !== null) {
+        const germEndMs = row.germinatedAt
+          ? new Date(row.germinatedAt + "T00:00:00").getTime()
+          : cursorMs + dGerm * DAY;
         segments.push({
           label: "Semis intérieur",
           color: "#E8912D",
           startDay: toDay(cursorMs),
-          endDay: toDay(indoorEndMs),
+          endDay: toDay(germEndMs),
         });
-        cursorMs = indoorEndMs;
-
-        if (d1Accl !== null) {
-          const acclEndMs = cursorMs + d1Accl * DAY;
-          segments.push({
-            label: "Acclimatation",
-            color: "#3B8EA5",
-            startDay: toDay(cursorMs),
-            endDay: toDay(acclEndMs),
-          });
-          cursorMs = acclEndMs;
-        }
+        cursorMs = germEndMs;
       }
-      if (d2 !== null) {
-        const endMs = row.transplantAt
-          ? new Date(row.transplantAt + "T00:00:00").getTime()
+      if (d1 !== null && d1 > 0) {
+        const germeEndMs = cursorMs + d1 * DAY;
+        segments.push({
+          label: "Germé",
+          color: "#6BBF59",
+          startDay: toDay(cursorMs),
+          endDay: toDay(germeEndMs),
+        });
+        cursorMs = germeEndMs;
+      }
+      if (d2 !== null && d2 > 0) {
+        const endMs = row.repiquageAt
+          ? new Date(row.repiquageAt + "T00:00:00").getTime()
           : cursorMs + d2 * DAY;
         segments.push({
           label: "Repiquage",
@@ -443,6 +443,16 @@ export default async function DashboardPage() {
           endDay: toDay(endMs),
         });
         cursorMs = endMs;
+      }
+      if (dAccl !== null) {
+        const acclEndMs = cursorMs + dAccl * DAY;
+        segments.push({
+          label: "Acclimatation",
+          color: "#3B8EA5",
+          startDay: toDay(cursorMs),
+          endDay: toDay(acclEndMs),
+        });
+        cursorMs = acclEndMs;
       }
       if (d3 !== null) {
         segments.push({

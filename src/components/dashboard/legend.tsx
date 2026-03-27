@@ -1,6 +1,8 @@
 const LEGEND_ITEMS = [
   { color: "#E8912D", label: "Semis intérieur" },
+  { color: "#6BBF59", label: "Germé" },
   { color: "#D45FA0", label: "Repiquage" },
+  { color: "#3B8EA5", label: "Acclimatation" },
   { color: "#D4C24A", label: "Semis extérieur" },
   { color: "#4A9E4A", label: "Au potager" },
   { color: "#C0392B", label: "Récolte" },

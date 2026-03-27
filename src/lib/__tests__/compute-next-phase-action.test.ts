@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { computeNextPhaseAction } from "../phase-utils";
 
 describe("computeNextPhaseAction", () => {
-  it("returns repiquage when in Semis intérieur and repiquage not done", () => {
+  it("returns null when in Semis intérieur (pre-germination, no phase advance)", () => {
     const result = computeNextPhaseAction(
       "Semis intérieur",
       null,        // repiquageAt
@@ -11,12 +11,24 @@ describe("computeNextPhaseAction", () => {
       14,          // daysRepiquageToTransplant (d2)
       false        // isComplete
     );
+    expect(result).toBeNull();
+  });
+
+  it("returns repiquage when in Germé for native indoor (Cas 1, has d2)", () => {
+    const result = computeNextPhaseAction(
+      "Germé",
+      null,
+      null,
+      "indoor",
+      14,    // d2 exists → native indoor
+      false
+    );
     expect(result).toBe("repiquage");
   });
 
-  it("returns null for indoor direct-sow (no repiquage step)", () => {
+  it("returns null when in Germé for direct-sow indoor (Cas 2, no d2)", () => {
     const result = computeNextPhaseAction(
-      "Semis intérieur",
+      "Germé",
       null,
       null,
       "indoor",

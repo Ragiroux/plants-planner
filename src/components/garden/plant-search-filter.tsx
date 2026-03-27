@@ -218,8 +218,9 @@ export function PlantSearchFilter({
   }
 
   function getLifecyclePreview(plantId: number): {
+    dGerm: number | null;
     d1: number | null;
-    d1Accl: number | null;
+    dAccl: number | null;
     d2: number | null;
     d3: number | null;
     transplantDate: string | null;
@@ -272,11 +273,12 @@ export function PlantSearchFilter({
       dateStr
     );
     const totalDaysToTransplant =
-      (durations.d1 ?? 0) + (durations.d1Accl ?? 0) + (durations.d2 ?? 0);
+      (durations.dGerm ?? 0) + (durations.d1 ?? 0) + (durations.d2 ?? 0) + (durations.dAccl ?? 0);
 
     return {
+      dGerm: durations.dGerm,
       d1: durations.d1,
-      d1Accl: durations.d1Accl,
+      dAccl: durations.dAccl,
       d2: durations.d2,
       d3: durations.d3,
       transplantDate:
@@ -596,13 +598,19 @@ export function PlantSearchFilter({
                   {preview && (
                     <div className="bg-[#F5F2EE] rounded-lg px-3 py-2 space-y-1">
                       <div className="flex items-center gap-1 flex-wrap text-xs text-[#5C5650]">
-                        {preview.d1 !== null && (
+                        {preview.dGerm !== null && (
                           <>
-                            <span>🌱 {preview.d1}j</span>
-                            {preview.d1Accl !== null && (
+                            <span>🌱 {preview.dGerm}j</span>
+                            {preview.d1 !== null && preview.d1 > 0 && (
                               <>
                                 <span className="text-[#A9A29A]">→</span>
-                                <span>🌿 {preview.d1Accl}j accl.</span>
+                                <span>🌿 {preview.d1}j</span>
+                              </>
+                            )}
+                            {preview.dAccl !== null && (
+                              <>
+                                <span className="text-[#A9A29A]">→</span>
+                                <span>🌡️ {preview.dAccl}j accl.</span>
                               </>
                             )}
                             {preview.d3 !== null && (
@@ -613,7 +621,7 @@ export function PlantSearchFilter({
                             )}
                           </>
                         )}
-                        {preview.d1 === null && preview.d3 !== null && (
+                        {preview.dGerm === null && preview.d3 !== null && (
                           <span>🏡 {preview.d3}j</span>
                         )}
                       </div>

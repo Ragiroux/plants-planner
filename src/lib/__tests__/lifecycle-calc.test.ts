@@ -3,6 +3,7 @@ import {
   getEffectiveLifecycleDurations,
   getPhaseTransitionDays,
   DEFAULT_INDOOR_DAYS,
+  DEFAULT_GERMINATION_DAYS,
 } from "../lifecycle-calc";
 import type { PlantCalendar } from "../plant-utils";
 
@@ -31,58 +32,96 @@ function makeCal(overrides?: Partial<PlantCalendar>): PlantCalendar {
 }
 
 describe("getEffectiveLifecycleDurations", () => {
-  // Cas 1: Native indoor plant — returns original values
-  it("returns original values when d1 is not null (native indoor plant)", () => {
+  // Cas 1: Native indoor plant — splits dGerm from d1, adds dAccl from d2
+  it("splits germination and adds acclimatation for native indoor plant", () => {
     const result = getEffectiveLifecycleDurations(28, 14, 60, "indoor", null, null);
-    expect(result).toEqual({ d1: 28, d1Accl: null, d2: 14, d3: 60 });
+    expect(result).toEqual({
+      dGerm: DEFAULT_GERMINATION_DAYS,
+      d1: 18, // 28 - 10
+      d2: 7,  // 14 - 7
+      dAccl: 7,
+      d3: 60,
+    });
   });
 
   it("ignores sowingType for native indoor plants", () => {
     const result = getEffectiveLifecycleDurations(28, 14, 60, "outdoor", null, null);
-    expect(result).toEqual({ d1: 28, d1Accl: null, d2: 14, d3: 60 });
+    expect(result).toEqual({
+      dGerm: DEFAULT_GERMINATION_DAYS,
+      d1: 18,
+      d2: 7,
+      dAccl: 7,
+      d3: 60,
+    });
+  });
+
+  it("uses actual germinated_at date when available (Cas 1)", () => {
+    const result = getEffectiveLifecycleDurations(
+      28, 14, 60, "indoor", null, null,
+      "2026-03-01", "2026-03-08" // 7 days germination
+    );
+    expect(result.dGerm).toBe(7);
+    expect(result.d1).toBe(21); // 28 - 7
+  });
+
+  it("handles d2 smaller than acclimatation days", () => {
+    const result = getEffectiveLifecycleDurations(28, 5, 60, "indoor", null, null);
+    expect(result.dAccl).toBe(5); // clamped to d2
+    expect(result.d2).toBe(0);
+  });
+
+  it("carves acclimatation from d3 when d2 is null (native indoor)", () => {
+    const result = getEffectiveLifecycleDurations(28, null, 60, "indoor", null, null);
+    expect(result.dAccl).toBe(7);
+    expect(result.d2).toBeNull();
+    expect(result.d3).toBe(53); // 60 - 7
+  });
+
+  it("preserves total duration for native indoor (Cas 1)", () => {
+    const d1Orig = 42, d2Orig = 21, d3Orig = 60;
+    const result = getEffectiveLifecycleDurations(d1Orig, d2Orig, d3Orig, "indoor", null, null);
+    const total = (result.dGerm ?? 0) + (result.d1 ?? 0) + (result.d2 ?? 0) + (result.dAccl ?? 0) + (result.d3 ?? 0);
+    expect(total).toBe(d1Orig + d2Orig + d3Orig);
   });
 
   // Cas 2: Direct-sow started indoor
-  it("synthesizes indoor lifecycle for direct-sow started indoor (no plantedDate)", () => {
+  it("synthesizes indoor lifecycle with germination for direct-sow indoor (no plantedDate)", () => {
     const cal = makeCal({ days_to_maturity_min: 55 });
     const result = getEffectiveLifecycleDurations(null, null, null, "indoor", cal, 21);
     expect(result).toEqual({
-      d1: 14, // 21 - 7
-      d1Accl: 7,
+      dGerm: DEFAULT_GERMINATION_DAYS,
+      d1: 4, // 21 - 7 - 10
       d2: null,
+      dAccl: 7,
       d3: 34, // max(55 - 21, 14)
     });
   });
 
   it("uses dynamic indoor duration based on outdoor_sow_start when planted early", () => {
-    // outdoor_sow_start = 12 (May, week 12) → weekToDate(12) ≈ May 1
-    // planted March 24 → ~38 days until May 1
-    // minIndoorDays = 21, but 38 > 21 so use 38
     const cal = makeCal({ days_to_maturity_min: 55, outdoor_sow_start: 12 });
     const result = getEffectiveLifecycleDurations(null, null, null, "indoor", cal, 21, "2026-03-24");
-    // d1 = 38 - 7 = 31, d1Accl = 7, d3 = max(55 - 38, 14)
-    expect(result.d1Accl).toBe(7);
+    expect(result.dGerm).toBe(DEFAULT_GERMINATION_DAYS);
+    expect(result.dAccl).toBe(7);
     expect(result.d2).toBeNull();
-    const totalIndoor = (result.d1 ?? 0) + (result.d1Accl ?? 0);
-    // Should be ~38 days (exact depends on weekToDate), definitely more than 21
+    const totalIndoor = (result.dGerm ?? 0) + (result.d1 ?? 0) + (result.dAccl ?? 0);
     expect(totalIndoor).toBeGreaterThan(21);
     expect(totalIndoor).toBeLessThan(50);
   });
 
   it("uses minimum indoor days when planted close to outdoor window", () => {
-    // outdoor_sow_start = 12, planted late April → only ~7 days until May
-    // minIndoorDays = 21 > 7, so use 21
     const cal = makeCal({ days_to_maturity_min: 55, outdoor_sow_start: 12 });
     const result = getEffectiveLifecycleDurations(null, null, null, "indoor", cal, 21, "2026-04-25");
-    expect(result.d1).toBe(14); // 21 - 7
-    expect(result.d1Accl).toBe(7);
+    expect(result.dGerm).toBe(DEFAULT_GERMINATION_DAYS);
+    expect(result.d1).toBe(4); // 21 - 7 - 10
+    expect(result.dAccl).toBe(7);
   });
 
   it("uses DEFAULT_INDOOR_DAYS when defaultIndoorDays is null", () => {
     const cal = makeCal({ days_to_maturity_min: 55 });
     const result = getEffectiveLifecycleDurations(null, null, null, "indoor", cal, null);
-    expect(result.d1).toBe(DEFAULT_INDOOR_DAYS - 7);
-    expect(result.d1Accl).toBe(7);
+    expect(result.dGerm).toBe(DEFAULT_GERMINATION_DAYS);
+    expect(result.d1).toBe(DEFAULT_INDOOR_DAYS - 7 - DEFAULT_GERMINATION_DAYS);
+    expect(result.dAccl).toBe(7);
   });
 
   it("uses fallback 60 days maturity when calendar is null", () => {
@@ -102,14 +141,25 @@ describe("getEffectiveLifecycleDurations", () => {
     expect(result.d3).toBe(Math.max(75 - 21, 14));
   });
 
+  it("uses actual germinated_at for direct-sow indoor (Cas 2)", () => {
+    const cal = makeCal({ days_to_maturity_min: 55 });
+    const result = getEffectiveLifecycleDurations(
+      null, null, null, "indoor", cal, 21,
+      "2026-03-01", "2026-03-06" // 5 days germination
+    );
+    expect(result.dGerm).toBe(5);
+    expect(result.d1).toBe(21 - 7 - 5); // 9
+  });
+
   // Cas 3: Direct-sow outdoor
   it("returns single d3 segment for outdoor direct-sow", () => {
     const cal = makeCal({ days_to_maturity_min: 55 });
     const result = getEffectiveLifecycleDurations(null, null, null, "outdoor", cal, 21);
     expect(result).toEqual({
+      dGerm: null,
       d1: null,
-      d1Accl: null,
       d2: null,
+      dAccl: null,
       d3: 55,
     });
   });
@@ -122,22 +172,22 @@ describe("getEffectiveLifecycleDurations", () => {
   // Cas 4: null/legacy
   it("returns all nulls when sowingType is null", () => {
     const result = getEffectiveLifecycleDurations(null, null, null, null, null, null);
-    expect(result).toEqual({ d1: null, d1Accl: null, d2: null, d3: null });
+    expect(result).toEqual({ dGerm: null, d1: null, d2: null, dAccl: null, d3: null });
   });
 });
 
 describe("getPhaseTransitionDays", () => {
   it("returns thresholds for indoor direct-sow lifecycle", () => {
-    const result = getPhaseTransitionDays({ d1: 14, d1Accl: 7, d2: null, d3: 34 });
+    const result = getPhaseTransitionDays({ dGerm: 10, d1: 4, d2: null, dAccl: 7, d3: 34 });
     expect(result).toEqual({
-      acclimationStart: 14,
-      transplantReady: 21, // 14 + 7
-      harvestReady: 55, // 21 + 34
+      acclimationStart: 14, // 10 + 4
+      transplantReady: 21,  // 10 + 4 + 7
+      harvestReady: 55,     // 21 + 34
     });
   });
 
   it("returns thresholds for outdoor direct-sow lifecycle", () => {
-    const result = getPhaseTransitionDays({ d1: null, d1Accl: null, d2: null, d3: 55 });
+    const result = getPhaseTransitionDays({ dGerm: null, d1: null, d2: null, dAccl: null, d3: 55 });
     expect(result).toEqual({
       acclimationStart: null,
       transplantReady: null,
@@ -146,7 +196,7 @@ describe("getPhaseTransitionDays", () => {
   });
 
   it("returns all nulls when all durations are null", () => {
-    const result = getPhaseTransitionDays({ d1: null, d1Accl: null, d2: null, d3: null });
+    const result = getPhaseTransitionDays({ dGerm: null, d1: null, d2: null, dAccl: null, d3: null });
     expect(result).toEqual({
       acclimationStart: null,
       transplantReady: null,
@@ -155,11 +205,11 @@ describe("getPhaseTransitionDays", () => {
   });
 
   it("handles native indoor plant with repiquage", () => {
-    const result = getPhaseTransitionDays({ d1: 28, d1Accl: null, d2: 14, d3: 60 });
+    const result = getPhaseTransitionDays({ dGerm: 10, d1: 18, d2: 7, dAccl: 7, d3: 60 });
     expect(result).toEqual({
-      acclimationStart: null,
-      transplantReady: 42, // 28 + 14
-      harvestReady: 102, // 42 + 60
+      acclimationStart: 35, // 10 + 18 + 7
+      transplantReady: 42,  // 35 + 7
+      harvestReady: 102,    // 42 + 60
     });
   });
 });

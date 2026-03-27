@@ -369,8 +369,7 @@ export function DashboardClient({
               <div className="space-y-4">
                 {actionNow.map((plant) => {
                   const progressPercent = plant.overallPercent ?? 0;
-                  const rawSegLabel = plant.currentSegment?.label ?? "En cours";
-                  const segLabel = plant.germinatedAt && rawSegLabel === "Semis intérieur" ? "Germé" : rawSegLabel;
+                  const segLabel = plant.currentSegment?.label ?? "En cours";
                   const phaseColor = plant.currentSegment?.color;
 
                   return (
@@ -608,8 +607,7 @@ export function DashboardClient({
               </div>
               <div className="space-y-3">
                 {growing.map((plant) => {
-                  const rawSegLabel = plant.currentSegment?.label ?? "En cours";
-                  const segLabel = plant.germinatedAt && rawSegLabel === "Semis intérieur" ? "Germé" : rawSegLabel;
+                  const segLabel = plant.currentSegment?.label ?? "En cours";
                   const segColor = plant.currentSegment?.color;
                   const segPercent = plant.currentSegmentTotal > 0
                     ? Math.round((plant.currentSegmentProgress / plant.currentSegmentTotal) * 100)

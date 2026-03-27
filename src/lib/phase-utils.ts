@@ -238,9 +238,15 @@ export function computeNextPhaseAction(
 ): "repiquage" | "transplant" | null {
   if (isComplete || !segmentLabel) return null;
 
-  if (segmentLabel === "Semis intérieur" && !repiquageAt) {
+  // Pre-germination: no phase advance, wait for germination
+  if (segmentLabel === "Semis intérieur") {
+    return null;
+  }
+
+  // Post-germination: advance to repiquage if applicable
+  if (segmentLabel === "Germé" && !repiquageAt) {
     if (sowingType === "indoor" && daysRepiquageToTransplant === null) {
-      // indoor direct-sow: no repiquage, advance straight to transplant after acclimatation
+      // indoor direct-sow: no repiquage, wait for acclimatation
       return null;
     }
     return "repiquage";
