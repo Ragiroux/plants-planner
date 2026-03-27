@@ -35,21 +35,37 @@ export default async function ShoppingPage() {
     subtotal: number;
   };
 
-  const rows: ShoppingRow[] = userPlantRows.map(({ userPlant, plant }) => {
-    const overplantFactor = getOverplantFactor(plant.frost_tolerance ?? "semi_hardy");
-    const adjustedQuantity = Math.ceil(userPlant.quantity * overplantFactor);
-    const seedsNeeded = calculateSeedsNeeded(adjustedQuantity);
-    const pricePerPacket = estimateSeedPacketPrice(plant.name);
-    const subtotal = pricePerPacket;
-    return {
-      plantName: plant.name,
-      quantity: userPlant.quantity,
-      overplantFactor,
-      seedsNeeded,
-      pricePerPacket,
-      subtotal,
-    };
-  });
+  // Group by plant name to merge split lots
+  const grouped = new Map<string, { totalQuantity: number; frostTolerance: string }>();
+  for (const { userPlant, plant } of userPlantRows) {
+    const existing = grouped.get(plant.name);
+    if (existing) {
+      existing.totalQuantity += userPlant.quantity;
+    } else {
+      grouped.set(plant.name, {
+        totalQuantity: userPlant.quantity,
+        frostTolerance: plant.frost_tolerance ?? "semi_hardy",
+      });
+    }
+  }
+
+  const rows: ShoppingRow[] = Array.from(grouped.entries())
+    .sort(([a], [b]) => a.localeCompare(b, "fr"))
+    .map(([plantName, { totalQuantity, frostTolerance }]) => {
+      const overplantFactor = getOverplantFactor(frostTolerance);
+      const adjustedQuantity = Math.ceil(totalQuantity * overplantFactor);
+      const seedsNeeded = calculateSeedsNeeded(adjustedQuantity);
+      const pricePerPacket = estimateSeedPacketPrice(plantName);
+      const subtotal = pricePerPacket;
+      return {
+        plantName,
+        quantity: totalQuantity,
+        overplantFactor,
+        seedsNeeded,
+        pricePerPacket,
+        subtotal,
+      };
+    });
 
   const total = rows.reduce((sum, r) => sum + r.subtotal, 0);
 
