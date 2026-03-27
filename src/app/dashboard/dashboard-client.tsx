@@ -193,6 +193,24 @@ export function DashboardClient({
     (p) => !actionNowIds.has(p.id) && !actionSoonIds.has(p.id)
   );
 
+  // Group growing plants by phase, sorted alphabetically within each group
+  const PHASE_ORDER = ["Semis intérieur", "Germé", "Repiquage", "Acclimatation", "Au potager"];
+  const growingGroups = PHASE_ORDER
+    .map((phase) => ({
+      phase,
+      plants: growing
+        .filter((p) => (p.currentSegment?.label ?? "En cours") === phase)
+        .sort((a, b) => a.name.localeCompare(b.name, "fr")),
+    }))
+    .filter((g) => g.plants.length > 0);
+  const listedPhases = new Set(PHASE_ORDER);
+  const otherPlants = growing
+    .filter((p) => !listedPhases.has(p.currentSegment?.label ?? ""))
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  if (otherPlants.length > 0) {
+    growingGroups.push({ phase: "Autre", plants: otherPlants });
+  }
+
   // Plants without planted date
   const noDate = trackingPlants.filter((p) => !p.plantedDate);
 
@@ -605,62 +623,65 @@ export function DashboardClient({
                   </svg>
                 </Link>
               </div>
-              <div className="space-y-3">
-                {growing.map((plant) => {
-                  const segLabel = plant.currentSegment?.label ?? "En cours";
-                  const segColor = plant.currentSegment?.color;
-                  const segPercent = plant.currentSegmentTotal > 0
-                    ? Math.round((plant.currentSegmentProgress / plant.currentSegmentTotal) * 100)
-                    : 0;
-                  const daysLeft = plant.currentSegmentTotal - plant.currentSegmentProgress;
-                  const nextLabel = plant.nextPhaseAction === "repiquage"
-                    ? "Repiquage"
-                    : plant.nextPhaseAction === "transplant"
-                    ? "Mise au potager"
-                    : null;
+              <div className="space-y-4">
+                {growingGroups.map((group) => (
+                  <div key={group.phase} className="space-y-2">
+                    <p className="text-xs font-semibold text-[#7D766E] uppercase tracking-wide">
+                      {group.phase}
+                    </p>
+                    {group.plants.map((plant) => {
+                      const segColor = plant.currentSegment?.color;
+                      const segPercent = plant.currentSegmentTotal > 0
+                        ? Math.round((plant.currentSegmentProgress / plant.currentSegmentTotal) * 100)
+                        : 0;
+                      const daysLeft = plant.currentSegmentTotal - plant.currentSegmentProgress;
+                      const nextLabel = plant.nextPhaseAction === "repiquage"
+                        ? "Repiquage"
+                        : plant.nextPhaseAction === "transplant"
+                        ? "Mise au potager"
+                        : null;
 
-                  return (
-                    <Link
-                      key={plant.id}
-                      href={`/garden/${plant.id}`}
-                      className="block space-y-1 rounded-lg px-2 py-1.5 -mx-2 hover:bg-[#F5F2EE] transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-lg shrink-0">{plant.emoji}</span>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-[#2A2622] truncate">
-                              {plant.name}
-                              {plant.varietyName && <span className="font-normal text-[#7D766E]"> · {plant.varietyName}</span>}
-                              {plant.quantity > 1 && (
-                                <span className="text-[#A9A29A] font-normal"> x{plant.quantity}</span>
+                      return (
+                        <Link
+                          key={plant.id}
+                          href={`/garden/${plant.id}`}
+                          className="block space-y-1 rounded-lg px-2 py-1.5 -mx-2 hover:bg-[#F5F2EE] transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-lg shrink-0">{plant.emoji}</span>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-[#2A2622] truncate">
+                                  {plant.name}
+                                  {plant.varietyName && <span className="font-normal text-[#7D766E]"> · {plant.varietyName}</span>}
+                                  {plant.quantity > 1 && (
+                                    <span className="text-[#A9A29A] font-normal"> x{plant.quantity}</span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-xs text-[#7D766E]">
+                                Jour {plant.currentSegmentProgress + 1} sur {plant.currentSegmentTotal}
+                              </p>
+                              {nextLabel && daysLeft > 0 && (
+                                <p className="text-xs text-[#A9A29A]">
+                                  {nextLabel} dans {daysLeft}j
+                                </p>
                               )}
-                            </p>
-                            <p className="text-xs text-[#7D766E]">
-                              {segLabel}
-                            </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-xs text-[#7D766E]">
-                            Jour {plant.currentSegmentProgress + 1} sur {plant.currentSegmentTotal}
-                          </p>
-                          {nextLabel && daysLeft > 0 && (
-                            <p className="text-xs text-[#A9A29A]">
-                              {nextLabel} dans {daysLeft}j
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <ProgressBar
-                        percent={segPercent}
-                        isComplete={false}
-                        isOverdue={false}
-                        color={segColor}
-                      />
-                    </Link>
-                  );
-                })}
+                          <ProgressBar
+                            percent={segPercent}
+                            isComplete={false}
+                            isOverdue={false}
+                            color={segColor}
+                          />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </section>
           )}

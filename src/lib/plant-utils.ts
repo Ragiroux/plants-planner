@@ -22,7 +22,7 @@ export interface PlantCalendar {
 export function getPlantEmoji(name: string): string {
   const n = name.toLowerCase();
   // Exact/specific matches first (order matters for substring matching)
-  if (n.includes("tomatillo")) return "🟢";
+  if (n.includes("tomatillo")) return "🍅";
   if (n.includes("tomate")) return "🍅";
   if (n.includes("topinambour")) return "🌻";
   if (n.includes("artichaut")) return "🌻";
