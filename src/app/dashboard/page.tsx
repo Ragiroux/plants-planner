@@ -182,6 +182,7 @@ export default async function DashboardPage() {
       calendar: cal,
       repiquageAt: row.userPlant.repiquage_at ?? null,
       transplantAt: row.userPlant.transplant_at ?? null,
+      germinatedAt: row.userPlant.germinated_at ?? null,
       sowingType: row.userPlant.sowing_type ?? null,
       defaultIndoorToTransplant: row.plant.default_indoor_to_transplant ?? null,
     };
@@ -534,6 +535,7 @@ export default async function DashboardPage() {
         gardenActions,
         sowingType,
         upcomingTransition,
+        germinatedAt: row.germinatedAt,
       };
     }
 
@@ -565,6 +567,7 @@ export default async function DashboardPage() {
       gardenActions: null,
       sowingType: row.sowingType ?? null,
       upcomingTransition: null,
+      germinatedAt: row.germinatedAt,
     };
   });
 

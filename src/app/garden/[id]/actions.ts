@@ -50,6 +50,82 @@ export async function logStep(
       })
     : null;
 
+  // Germination: split the lot like advancePhase does for repiquage/transplant
+  if (stepType === "germination") {
+    const today = new Date().toISOString().slice(0, 10);
+    const advanceQty = quantity ?? userPlant.quantity;
+
+    if (advanceQty < 1 || advanceQty > userPlant.quantity) {
+      return { error: "Quantité invalide" };
+    }
+
+    let newRecordId: number | null = null;
+
+    if (advanceQty < userPlant.quantity) {
+      // Split: reduce original quantity, create new record with germinated_at
+      await db
+        .update(user_plants)
+        .set({ quantity: userPlant.quantity - advanceQty })
+        .where(eq(user_plants.id, userPlantId));
+
+      const [newRecord] = await db
+        .insert(user_plants)
+        .values({
+          user_id: userPlant.user_id,
+          garden_id: userPlant.garden_id,
+          plant_id: userPlant.plant_id,
+          quantity: advanceQty,
+          planted_date: userPlant.planted_date,
+          repiquage_at: userPlant.repiquage_at,
+          transplant_at: userPlant.transplant_at,
+          germinated_at: today,
+          notes: userPlant.notes,
+          sowing_type: userPlant.sowing_type,
+          variety_id: userPlant.variety_id,
+        })
+        .returning({ id: user_plants.id });
+
+      newRecordId = newRecord.id;
+
+      await db.insert(plant_steps).values({
+        user_plant_id: newRecord.id,
+        step_type: "germination",
+        completed_at: new Date(),
+        notes: notes ?? null,
+      });
+    } else {
+      // Advance all: update in place
+      await db
+        .update(user_plants)
+        .set({ germinated_at: today })
+        .where(eq(user_plants.id, userPlantId));
+
+      await db.insert(plant_steps).values({
+        user_plant_id: userPlantId,
+        step_type: "germination",
+        completed_at: new Date(),
+        notes: notes ?? null,
+      });
+    }
+
+    // Auto-create journal observation
+    await db.insert(observations).values({
+      user_id: session.user.id,
+      plant_id: userPlant.plant_id,
+      week_number: getCurrentWeek(),
+      year: new Date().getFullYear(),
+      content: stepObservationContent("germination", plant.name, variety?.name),
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/garden");
+    revalidatePath(`/garden/${userPlantId}`);
+    if (newRecordId) revalidatePath(`/garden/${newRecordId}`);
+    revalidatePath("/journal");
+
+    return {};
+  }
+
   const next_action_date = computeNextActionDate(stepType, plant);
 
   const stepNotes =

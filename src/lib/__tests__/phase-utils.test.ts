@@ -26,6 +26,7 @@ function makeRow(
     calendar,
     repiquageAt: null,
     transplantAt: null,
+    germinatedAt: null,
     sowingType: null,
     ...overrides,
   };

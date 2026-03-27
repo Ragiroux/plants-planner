@@ -212,6 +212,7 @@ export async function advancePhase(
         planted_date: userPlant.planted_date,
         repiquage_at: targetPhase === "repiquage" ? today : userPlant.repiquage_at,
         transplant_at: targetPhase === "transplant" ? today : userPlant.transplant_at,
+        germinated_at: userPlant.germinated_at,
         notes: userPlant.notes,
         sowing_type: userPlant.sowing_type,
         variety_id: userPlant.variety_id,

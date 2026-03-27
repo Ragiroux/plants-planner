@@ -49,6 +49,7 @@ interface TrackingPlant {
   gardenActions: readonly string[] | null;
   sowingType: "indoor" | "outdoor" | null;
   upcomingTransition: { label: string; daysUntil: number } | null;
+  germinatedAt: string | null;
 }
 
 interface OverdueStep {
@@ -368,7 +369,8 @@ export function DashboardClient({
               <div className="space-y-4">
                 {actionNow.map((plant) => {
                   const progressPercent = plant.overallPercent ?? 0;
-                  const segLabel = plant.currentSegment?.label ?? "En cours";
+                  const rawSegLabel = plant.currentSegment?.label ?? "En cours";
+                  const segLabel = plant.germinatedAt && rawSegLabel === "Semis intérieur" ? "Germé" : rawSegLabel;
                   const phaseColor = plant.currentSegment?.color;
 
                   return (
@@ -606,7 +608,8 @@ export function DashboardClient({
               </div>
               <div className="space-y-3">
                 {growing.map((plant) => {
-                  const segLabel = plant.currentSegment?.label ?? "En cours";
+                  const rawSegLabel = plant.currentSegment?.label ?? "En cours";
+                  const segLabel = plant.germinatedAt && rawSegLabel === "Semis intérieur" ? "Germé" : rawSegLabel;
                   const segColor = plant.currentSegment?.color;
                   const segPercent = plant.currentSegmentTotal > 0
                     ? Math.round((plant.currentSegmentProgress / plant.currentSegmentTotal) * 100)

@@ -65,6 +65,7 @@ function plantWithCalendarToActionRow(plant: PlantWithCalendar): PlantActionRow 
     rowSpacingCm: plant.row_spacing_cm,
     repiquageAt: null,
     transplantAt: null,
+    germinatedAt: null,
     sowingType: plant.sowingType,
     calendar: {
       indoor_sow_start: plant.indoor_sow_start,

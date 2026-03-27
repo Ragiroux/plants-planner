@@ -201,6 +201,7 @@ export const user_plants = pgTable(
     sowing_type: sowingTypeEnum("sowing_type"),
     repiquage_at: date("repiquage_at"),
     transplant_at: date("transplant_at"),
+    germinated_at: date("germinated_at"),
     notes: text("notes"),
     created_at: timestamp("created_at").defaultNow().notNull(),
   }

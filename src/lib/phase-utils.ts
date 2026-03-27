@@ -21,6 +21,7 @@ export interface PlantActionRow {
   calendar: PlantCalendar | null;
   repiquageAt: string | null;
   transplantAt: string | null;
+  germinatedAt: string | null;
   sowingType: "indoor" | "outdoor" | null;
 }
 

@@ -18,6 +18,7 @@ function makeCtx(overrides?: Partial<TipContext>): TipContext {
     daysToMaturityMin: null,
     daysToMaturityMax: null,
     sowingType: null,
+    germinatedAt: null,
     ...overrides,
   };
 }
